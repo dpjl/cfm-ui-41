@@ -24,7 +24,7 @@ interface GalleryGridCellProps {
 
 /**
  * A cell component for the virtualized grid that renders a media item or separator
- * With improved positioning calculations and mobile optimization
+ * With improved positioning calculations
  */
 const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGridCellProps) => {
   // Calculate the index in the flat array based on row and column
@@ -56,22 +56,16 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
     
     // Only render this separator if it's the first occurrence in this row
     if (isFirstSeparatorOccurrence) {
-      // Calculate the style for this separator (a standard cell)
-      const separatorStyle = data.calculateCellStyle(style, columnIndex, true);
+      // Calculer le style normal pour ce séparateur (une cellule standard)
+      const separatorStyle = data.calculateCellStyle(style, columnIndex, false);
       
-      // On small screens, adjust the size for better readability
+      // Sur les petits écrans, ajuster la taille pour une meilleure lisibilité
       const finalStyle = isSmallScreen 
         ? { ...separatorStyle, height: `${parseFloat(separatorStyle.height as string) * 0.9}px` }
         : separatorStyle;
       
       return (
-        <div 
-          style={finalStyle} 
-          className="separator-cell relative" 
-          role="cell" 
-          aria-label={`Separator: ${item.label}`}
-          data-separator-id={item.yearMonth}
-        >
+        <div style={finalStyle} className="separator-cell relative" role="cell" aria-label={`Separator: ${item.label}`}>
           <MonthYearSeparator label={item.label} />
         </div>
       );
@@ -88,7 +82,7 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
   const adjustedStyle = data.calculateCellStyle(style, columnIndex, false);
   
   return (
-    <div style={adjustedStyle} data-media-cell-id={id}>
+    <div style={adjustedStyle}>
       <LazyMediaItem
         key={id}
         id={id}
