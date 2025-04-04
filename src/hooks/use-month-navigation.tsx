@@ -3,8 +3,8 @@ import { useEffect, useCallback } from 'react';
 import { useIsMobile } from './use-breakpoint';
 
 interface UseMonthNavigationProps {
-  navigateToPreviousMonth: () => void;
-  navigateToNextMonth: () => void;
+  navigateToPreviousMonth: () => boolean;
+  navigateToNextMonth: () => boolean;
 }
 
 /**

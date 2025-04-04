@@ -58,6 +58,7 @@ const Gallery: React.FC<GalleryProps> = ({
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const mediaIds = mediaResponse?.mediaIds || [];
+  const gridRef = useRef<any>(null);
   
   const selection = useGallerySelection({
     mediaIds,
@@ -83,15 +84,32 @@ const Gallery: React.FC<GalleryProps> = ({
     });
   }, []);
 
+  // Référence à la fonction de navigation mensuelle (sera définie par l'enfant VirtualizedGalleryGrid)
+  const navigateToPreviousMonthRef = useRef<() => boolean>(() => false);
+  const navigateToNextMonthRef = useRef<() => boolean>(() => false);
+  
   // Gestionnaires de navigation mensuelle
   const handleNavigatePrevMonth = useCallback(() => {
-    // Implémenter par swipe sur mobile, par bouton sur desktop
-    console.log('Navigate to previous month');
+    if (navigateToPreviousMonthRef.current) {
+      return navigateToPreviousMonthRef.current();
+    }
+    return false;
   }, []);
   
   const handleNavigateNextMonth = useCallback(() => {
-    // Implémenter par swipe sur mobile, par bouton sur desktop
-    console.log('Navigate to next month');
+    if (navigateToNextMonthRef.current) {
+      return navigateToNextMonthRef.current();
+    }
+    return false;
+  }, []);
+  
+  // Gestionnaire pour recevoir les références aux fonctions de navigation depuis VirtualizedGalleryGrid
+  const handleSetNavigationFunctions = useCallback((
+    prevFn: () => boolean, 
+    nextFn: () => boolean
+  ) => {
+    navigateToPreviousMonthRef.current = prevFn;
+    navigateToNextMonthRef.current = nextFn;
   }, []);
   
   // Gestionnaire de swipe pour mobile
@@ -187,6 +205,8 @@ const Gallery: React.FC<GalleryProps> = ({
             position={position}
             gap={gap}
             onNavigateMonth={isMobile ? (direction) => handleHorizontalSwipe(direction === 'prev' ? 'right' : 'left') : undefined}
+            onSetNavigationFunctions={handleSetNavigationFunctions}
+            gridRef={gridRef}
           />
         )}
       </div>

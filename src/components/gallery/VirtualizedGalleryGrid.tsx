@@ -1,5 +1,5 @@
 
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { DetailedMediaInfo } from '@/api/imageApi';
@@ -26,6 +26,8 @@ interface VirtualizedGalleryGridProps {
   position: 'source' | 'destination';
   gap?: number;
   onNavigateMonth?: (direction: 'prev' | 'next') => void;
+  onSetNavigationFunctions?: (prevFn: () => boolean, nextFn: () => boolean) => void;
+  gridRef?: React.RefObject<any>;
 }
 
 /**
@@ -42,15 +44,20 @@ const VirtualizedGalleryGrid = memo(({
   updateMediaInfo,
   position = 'source',
   gap = 8,
-  onNavigateMonth
+  onNavigateMonth,
+  onSetNavigationFunctions,
+  gridRef: externalGridRef
 }: VirtualizedGalleryGridProps) => {
   const mediaIds = mediaResponse?.mediaIds || [];
   
   const {
-    gridRef,
+    gridRef: internalGridRef,
     gridKey,
     scrollPositionRef
   } = useGalleryGrid();
+  
+  // Utiliser le gridRef externe s'il est fourni, sinon utiliser l'interne
+  const effectiveGridRef = externalGridRef || internalGridRef;
   
   const { 
     dateIndex, 
@@ -60,24 +67,24 @@ const VirtualizedGalleryGrid = memo(({
     navigateToNextMonth
   } = useMediaDates(mediaResponse, columnsCount);
   
-  useGalleryMediaTracking(mediaResponse, gridRef);
+  useGalleryMediaTracking(mediaResponse, effectiveGridRef);
   
   // Handlers pour la navigation mensuelle
   const handlePrevMonth = useCallback(() => {
-    const success = navigateToPreviousMonth(gridRef);
+    const success = navigateToPreviousMonth(effectiveGridRef);
     if (success && onNavigateMonth) {
       onNavigateMonth('prev');
     }
     return success;
-  }, [navigateToPreviousMonth, gridRef, onNavigateMonth]);
+  }, [navigateToPreviousMonth, effectiveGridRef, onNavigateMonth]);
   
   const handleNextMonth = useCallback(() => {
-    const success = navigateToNextMonth(gridRef);
+    const success = navigateToNextMonth(effectiveGridRef);
     if (success && onNavigateMonth) {
       onNavigateMonth('next');
     }
     return success;
-  }, [navigateToNextMonth, gridRef, onNavigateMonth]);
+  }, [navigateToNextMonth, effectiveGridRef, onNavigateMonth]);
   
   // Utiliser le hook de navigation mensuelle pour les raccourcis clavier
   useMonthNavigation({
@@ -85,11 +92,18 @@ const VirtualizedGalleryGrid = memo(({
     navigateToNextMonth: handleNextMonth
   });
   
+  // Passer les fonctions de navigation au composant parent si nécessaire
+  useEffect(() => {
+    if (onSetNavigationFunctions) {
+      onSetNavigationFunctions(handlePrevMonth, handleNextMonth);
+    }
+  }, [handlePrevMonth, handleNextMonth, onSetNavigationFunctions]);
+  
   const scrollbarWidth = useMemo(() => getScrollbarWidth(), []);
   
   const handleSelectYearMonth = useCallback((year: number, month: number) => {
-    scrollToYearMonth(year, month, gridRef);
-  }, [scrollToYearMonth, gridRef]);
+    scrollToYearMonth(year, month, effectiveGridRef);
+  }, [scrollToYearMonth, effectiveGridRef]);
   
   const rowCount = useMemo(() => {
     return Math.ceil(enrichedGalleryItems.length / columnsCount);
@@ -149,7 +163,7 @@ const VirtualizedGalleryGrid = memo(({
           
           return (
             <FixedSizeGrid
-              ref={gridRef}
+              ref={effectiveGridRef}
               columnCount={columnsCount}
               columnWidth={columnWidth}
               height={height}

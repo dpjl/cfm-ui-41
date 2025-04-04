@@ -45,6 +45,7 @@ const GalleryContent: React.FC<GalleryContentProps> = ({
   onToggleFullView
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<any>(null);
   
   // Déterminer les limites de colonnes en fonction du mode vue
   const getColumnLimits = () => {
@@ -92,6 +93,7 @@ const GalleryContent: React.FC<GalleryContentProps> = ({
         gap={4}
         mobileViewMode={mobileViewMode}
         onToggleFullView={onToggleFullView}
+        gridRef={gridRef}
       />
     </div>
   );
