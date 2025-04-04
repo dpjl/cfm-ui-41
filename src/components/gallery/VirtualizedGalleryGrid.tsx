@@ -1,3 +1,4 @@
+
 import React, { memo, useMemo, useCallback } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -52,7 +53,7 @@ const VirtualizedGalleryGrid = memo(({
     dateIndex, 
     scrollToYearMonth, 
     enrichedGalleryItems 
-  } = useMediaDates(mediaResponse);
+  } = useMediaDates(mediaResponse, columnsCount); // Passer columnsCount au hook
   
   useGalleryMediaTracking(mediaResponse, gridRef);
   

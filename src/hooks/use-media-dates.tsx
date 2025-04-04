@@ -13,7 +13,8 @@ interface MediaDateIndex {
   monthsByYear: Map<number, number[]>;
 }
 
-export function useMediaDates(mediaListResponse?: MediaListResponse) {
+// Modifier la signature de la fonction pour accepter le paramètre columnsCount avec une valeur par défaut
+export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCount: number = 5) {
   const [currentYearMonth, setCurrentYearMonth] = useState<string | null>(null);
 
   // Construire les index à partir des données reçues
@@ -87,6 +88,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse) {
 
   // Créer une structure de données enrichie avec des séparateurs de mois/année
   // Maintenant avec des séparateurs positionnés uniquement au début des lignes
+  // et en utilisant un nombre de colonnes dynamique
   const enrichedGalleryItems = useMemo(() => {
     if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
       return [];
@@ -135,11 +137,13 @@ export function useMediaDates(mediaListResponse?: MediaListResponse) {
     for (const yearMonth of sortedYearMonths) {
       // Vérifier si nous sommes au début d'une ligne (dans une grille virtuelle)
       // Si nous ne sommes pas au début d'une ligne, ajouter des éléments vides pour compléter la ligne
-      const isStartOfRow = items.length % 5 === 0; // Assumons 5 colonnes par défaut
+      // Utiliser le paramètre columnsCount au lieu de la valeur codée en dur
+      const isStartOfRow = items.length % columnsCount === 0;
       
       if (!isStartOfRow) {
         // Calculer combien d'éléments vides nous devons ajouter pour atteindre le début de la ligne suivante
-        const itemsToAdd = 5 - (items.length % 5);
+        // Utiliser columnsCount au lieu de la valeur codée en dur
+        const itemsToAdd = columnsCount - (items.length % columnsCount);
         for (let i = 0; i < itemsToAdd; i++) {
           // Ajouter un élément vide de type média avec un ID spécial
           items.push({
@@ -176,7 +180,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse) {
     }
 
     return items;
-  }, [mediaListResponse]);
+  }, [mediaListResponse, columnsCount]); // Ajouter columnsCount comme dépendance
 
   // Index pour accéder rapidement à un séparateur par yearMonth
   const separatorIndices = useMemo(() => {
