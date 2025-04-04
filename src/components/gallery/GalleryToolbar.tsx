@@ -3,7 +3,17 @@ import React from 'react';
 import { Button } from '../ui/button';
 import { SelectionMode } from '../../hooks/use-gallery-selection';
 import { useMediaQuery } from '../../hooks/use-media-query';
-import { CheckSquare, Square, ChevronLeft, ChevronRight, Settings, Maximize, Minimize } from 'lucide-react';
+import { 
+  CheckSquare, 
+  Square, 
+  ChevronLeft, 
+  ChevronRight, 
+  Settings, 
+  Maximize, 
+  Minimize,
+  ArrowLeft,
+  ArrowRight
+} from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { GalleryViewMode } from '@/types/gallery';
@@ -23,6 +33,9 @@ interface GalleryToolbarProps {
   // Nouvelles props pour le toggle de vue
   mobileViewMode?: GalleryViewMode;
   onToggleFullView?: () => void;
+  // Nouvelles props pour la navigation mensuelle
+  onNavigateToPreviousMonth?: () => void;
+  onNavigateToNextMonth?: () => void;
 }
 
 const GalleryToolbar: React.FC<GalleryToolbarProps> = ({ 
@@ -36,7 +49,9 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
   selectionMode,
   onToggleSelectionMode,
   mobileViewMode = 'both',
-  onToggleFullView
+  onToggleFullView,
+  onNavigateToPreviousMonth,
+  onNavigateToNextMonth
 }) => {
   const isMobile = useIsMobile();
   
@@ -48,7 +63,48 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
   const isFullView = (position === 'source' && mobileViewMode === 'left') || 
                      (position === 'destination' && mobileViewMode === 'right');
 
-  // Pour la galerie de gauche (source), ordre: sidebar, select all, clear, mode, view toggle
+  // Boutons de navigation mensuelle (uniquement sur desktop)
+  const monthNavigationButtons = !isMobile && onNavigateToPreviousMonth && onNavigateToNextMonth ? (
+    <>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onNavigateToPreviousMonth}
+              className="h-8 w-8"
+            >
+              <ArrowLeft size={18} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Mois précédent</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onNavigateToNextMonth}
+              className="h-8 w-8"
+            >
+              <ArrowRight size={18} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Mois suivant</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </>
+  ) : null;
+
+  // Pour la galerie de gauche (source), ordre: sidebar, select all, clear, mode, navigation, view toggle
   const leftGalleryToolbar = (
     <>
       {onToggleSidebar && (
@@ -148,6 +204,9 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
         </Tooltip>
       </TooltipProvider>
 
+      {/* Boutons de navigation mensuelle (uniquement sur desktop) */}
+      {monthNavigationButtons}
+
       {/* Bouton Agrandir/Réduire pour la vue */}
       {onToggleFullView && (
         <TooltipProvider>
@@ -175,7 +234,7 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
     </>
   );
 
-  // Pour la galerie de droite (destination), ordre: view toggle, mode, clear, select all, sidebar
+  // Pour la galerie de droite (destination), ordre: view toggle, navigation, mode, clear, select all, sidebar
   const rightGalleryToolbar = (
     <>
       {/* Bouton Agrandir/Réduire pour la vue */}
@@ -202,6 +261,9 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
           </Tooltip>
         </TooltipProvider>
       )}
+
+      {/* Boutons de navigation mensuelle (uniquement sur desktop) */}
+      {monthNavigationButtons}
 
       <TooltipProvider>
         <Tooltip>

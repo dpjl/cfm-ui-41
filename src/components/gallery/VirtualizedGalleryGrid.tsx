@@ -13,6 +13,7 @@ import {
   calculateGridParameters,
   getScrollbarWidth
 } from '@/utils/grid-utils';
+import { useMonthNavigation } from '@/hooks/use-month-navigation';
 
 interface VirtualizedGalleryGridProps {
   mediaResponse: MediaListResponse;
@@ -24,6 +25,7 @@ interface VirtualizedGalleryGridProps {
   updateMediaInfo?: (id: string, info: DetailedMediaInfo) => void;
   position: 'source' | 'destination';
   gap?: number;
+  onNavigateMonth?: (direction: 'prev' | 'next') => void;
 }
 
 /**
@@ -39,7 +41,8 @@ const VirtualizedGalleryGrid = memo(({
   showDates = false,
   updateMediaInfo,
   position = 'source',
-  gap = 8
+  gap = 8,
+  onNavigateMonth
 }: VirtualizedGalleryGridProps) => {
   const mediaIds = mediaResponse?.mediaIds || [];
   
@@ -52,10 +55,35 @@ const VirtualizedGalleryGrid = memo(({
   const { 
     dateIndex, 
     scrollToYearMonth, 
-    enrichedGalleryItems 
-  } = useMediaDates(mediaResponse, columnsCount); // Passer columnsCount au hook
+    enrichedGalleryItems,
+    navigateToPreviousMonth,
+    navigateToNextMonth
+  } = useMediaDates(mediaResponse, columnsCount);
   
   useGalleryMediaTracking(mediaResponse, gridRef);
+  
+  // Handlers pour la navigation mensuelle
+  const handlePrevMonth = useCallback(() => {
+    const success = navigateToPreviousMonth(gridRef);
+    if (success && onNavigateMonth) {
+      onNavigateMonth('prev');
+    }
+    return success;
+  }, [navigateToPreviousMonth, gridRef, onNavigateMonth]);
+  
+  const handleNextMonth = useCallback(() => {
+    const success = navigateToNextMonth(gridRef);
+    if (success && onNavigateMonth) {
+      onNavigateMonth('next');
+    }
+    return success;
+  }, [navigateToNextMonth, gridRef, onNavigateMonth]);
+  
+  // Utiliser le hook de navigation mensuelle pour les raccourcis clavier
+  useMonthNavigation({
+    navigateToPreviousMonth: handlePrevMonth,
+    navigateToNextMonth: handleNextMonth
+  });
   
   const scrollbarWidth = useMemo(() => getScrollbarWidth(), []);
   
@@ -161,5 +189,8 @@ const VirtualizedGalleryGrid = memo(({
 });
 
 VirtualizedGalleryGrid.displayName = 'VirtualizedGalleryGrid';
+
+// Exposer les nouveaux hooks pour la navigation mensuelle
+export { useMonthNavigation };
 
 export default VirtualizedGalleryGrid;

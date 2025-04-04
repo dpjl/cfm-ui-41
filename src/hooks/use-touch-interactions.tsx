@@ -4,13 +4,20 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 interface UseTouchInteractionsProps {
   id: string;
   onSelect: (id: string, extendSelection: boolean) => void;
+  onHorizontalSwipe?: (direction: 'left' | 'right') => void;
 }
 
-export function useTouchInteractions({ id, onSelect }: UseTouchInteractionsProps) {
+export function useTouchInteractions({ 
+  id, 
+  onSelect, 
+  onHorizontalSwipe 
+}: UseTouchInteractionsProps) {
   const [touchStartPoint, setTouchStartPoint] = useState<{x: number, y: number} | null>(null);
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   const touchMoveCount = useRef(0);
   const verticalMoveDistance = useRef(0);
+  const horizontalMoveDistance = useRef(0);
+  const swipeThreshold = 80; // Distance en px pour déclencher un swipe
   
   // Clean up the timer when component unmounts or when the id changes
   useEffect(() => {
@@ -27,6 +34,7 @@ export function useTouchInteractions({ id, onSelect }: UseTouchInteractionsProps
     setTouchStartPoint({x: touch.clientX, y: touch.clientY});
     touchMoveCount.current = 0;
     verticalMoveDistance.current = 0;
+    horizontalMoveDistance.current = 0;
     
     // Start the long press timer
     const timer = setTimeout(() => {
@@ -51,10 +59,14 @@ export function useTouchInteractions({ id, onSelect }: UseTouchInteractionsProps
     // Get current touch position
     const touch = e.touches[0];
     const currentY = touch.clientY;
+    const currentX = touch.clientX;
     
-    // Calculate vertical movement distance
+    // Calculate movement distances
     const yDiff = Math.abs(currentY - touchStartPoint.y);
+    const xDiff = currentX - touchStartPoint.x; // non-absolu pour la direction
+    
     verticalMoveDistance.current = yDiff;
+    horizontalMoveDistance.current = xDiff;
     
     // Increment the movement counter
     touchMoveCount.current += 1;
@@ -73,9 +85,22 @@ export function useTouchInteractions({ id, onSelect }: UseTouchInteractionsProps
       setLongPressTimer(null);
     }
     
-    // Only treat as tap if minimal movement AND minimal vertical scroll distance
-    // This is the key change to prevent selection during scrolling
-    if (touchMoveCount.current < 10 && verticalMoveDistance.current < 15) {
+    // Détecter si c'est un swipe horizontal significatif
+    // Si mouvement horizontal important ET mouvement vertical faible
+    const isHorizontalSwipe = Math.abs(horizontalMoveDistance.current) > swipeThreshold && 
+                              verticalMoveDistance.current < 50;
+    
+    if (isHorizontalSwipe && onHorizontalSwipe) {
+      if (horizontalMoveDistance.current > 0) {
+        // Swipe vers la droite
+        onHorizontalSwipe('right');
+      } else {
+        // Swipe vers la gauche
+        onHorizontalSwipe('left');
+      }
+    } 
+    // Sinon, c'est peut-être un tap standard
+    else if (touchMoveCount.current < 10 && verticalMoveDistance.current < 15) {
       e.preventDefault();
       e.stopPropagation();
       onSelect(id, false);
@@ -84,7 +109,8 @@ export function useTouchInteractions({ id, onSelect }: UseTouchInteractionsProps
     // Reset for next interaction
     setTouchStartPoint(null);
     verticalMoveDistance.current = 0;
-  }, [longPressTimer, id, onSelect]);
+    horizontalMoveDistance.current = 0;
+  }, [longPressTimer, id, onSelect, onHorizontalSwipe]);
   
   return {
     handleTouchStart,

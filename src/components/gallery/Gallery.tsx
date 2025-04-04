@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import VirtualizedGalleryGrid from './VirtualizedGalleryGrid';
@@ -82,6 +83,30 @@ const Gallery: React.FC<GalleryProps> = ({
     });
   }, []);
 
+  // Gestionnaires de navigation mensuelle
+  const handleNavigatePrevMonth = useCallback(() => {
+    // Implémenter par swipe sur mobile, par bouton sur desktop
+    console.log('Navigate to previous month');
+  }, []);
+  
+  const handleNavigateNextMonth = useCallback(() => {
+    // Implémenter par swipe sur mobile, par bouton sur desktop
+    console.log('Navigate to next month');
+  }, []);
+  
+  // Gestionnaire de swipe pour mobile
+  const handleHorizontalSwipe = useCallback((direction: 'left' | 'right') => {
+    if (!isMobile) return;
+    
+    if (direction === 'left') {
+      // Swipe gauche = mois suivant
+      handleNavigateNextMonth();
+    } else if (direction === 'right') {
+      // Swipe droite = mois précédent
+      handleNavigatePrevMonth();
+    }
+  }, [isMobile, handleNavigateNextMonth, handleNavigatePrevMonth]);
+
   const shouldShowInfoPanel = selectedIds.length > 0;
   
   const handleCloseInfoPanel = useCallback(() => {
@@ -129,6 +154,8 @@ const Gallery: React.FC<GalleryProps> = ({
         onToggleSelectionMode={selection.toggleSelectionMode}
         mobileViewMode={mobileViewMode}
         onToggleFullView={onToggleFullView}
+        onNavigateToPreviousMonth={!isMobile ? handleNavigatePrevMonth : undefined}
+        onNavigateToNextMonth={!isMobile ? handleNavigateNextMonth : undefined}
       />
       
       <div className="flex-1 overflow-hidden relative scrollbar-vertical">
@@ -159,6 +186,7 @@ const Gallery: React.FC<GalleryProps> = ({
             updateMediaInfo={updateMediaInfo}
             position={position}
             gap={gap}
+            onNavigateMonth={isMobile ? (direction) => handleHorizontalSwipe(direction === 'prev' ? 'right' : 'left') : undefined}
           />
         )}
       </div>

@@ -223,6 +223,54 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     return false;
   }, [dateIndex, separatorIndices]);
 
+  // Nouvelle fonction: naviguer au mois précédent
+  const navigateToPreviousMonth = useCallback((gridRef: React.RefObject<any>) => {
+    if (!currentYearMonth || !gridRef.current) return false;
+    
+    // Récupérer l'année et le mois actuels
+    const [currentYear, currentMonth] = currentYearMonth.split('-').map(Number);
+    
+    // Obtenir tous les yearMonth disponibles triés chronologiquement (du plus ancien au plus récent)
+    const allYearMonths = Array.from(dateIndex.yearMonthToIndex.keys()).sort();
+    
+    // Trouver l'index de l'année-mois actuel
+    const currentIndex = allYearMonths.indexOf(currentYearMonth);
+    
+    if (currentIndex > 0) {
+      // Il y a un mois précédent disponible
+      const previousYearMonth = allYearMonths[currentIndex - 1];
+      const [prevYear, prevMonth] = previousYearMonth.split('-').map(Number);
+      
+      return scrollToYearMonth(prevYear, prevMonth, gridRef);
+    }
+    
+    return false;
+  }, [currentYearMonth, dateIndex.yearMonthToIndex, scrollToYearMonth]);
+
+  // Nouvelle fonction: naviguer au mois suivant
+  const navigateToNextMonth = useCallback((gridRef: React.RefObject<any>) => {
+    if (!currentYearMonth || !gridRef.current) return false;
+    
+    // Récupérer l'année et le mois actuels
+    const [currentYear, currentMonth] = currentYearMonth.split('-').map(Number);
+    
+    // Obtenir tous les yearMonth disponibles triés chronologiquement (du plus ancien au plus récent)
+    const allYearMonths = Array.from(dateIndex.yearMonthToIndex.keys()).sort();
+    
+    // Trouver l'index de l'année-mois actuel
+    const currentIndex = allYearMonths.indexOf(currentYearMonth);
+    
+    if (currentIndex < allYearMonths.length - 1) {
+      // Il y a un mois suivant disponible
+      const nextYearMonth = allYearMonths[currentIndex + 1];
+      const [nextYear, nextMonth] = nextYearMonth.split('-').map(Number);
+      
+      return scrollToYearMonth(nextYear, nextMonth, gridRef);
+    }
+    
+    return false;
+  }, [currentYearMonth, dateIndex.yearMonthToIndex, scrollToYearMonth]);
+
   const getDateForId = useCallback((id: string): string | undefined => {
     return dateIndex.idToDate.get(id);
   }, [dateIndex]);
@@ -234,6 +282,9 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     getDateForId,
     setCurrentYearMonth,
     enrichedGalleryItems,
-    separatorIndices
+    separatorIndices,
+    // Exposer les nouvelles fonctions de navigation
+    navigateToPreviousMonth,
+    navigateToNextMonth
   };
 }
