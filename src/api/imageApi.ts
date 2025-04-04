@@ -1,3 +1,4 @@
+
 import { MediaItem, MediaListResponse } from '@/types/gallery';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -81,7 +82,10 @@ function generateHash() {
 }
 
 export async function fetchDirectoryTree(position?: 'left' | 'right'): Promise<DirectoryNode[]> {
-  const url = `${API_BASE_URL}/tree${position ? `?position=${position}` : ''}`;
+  // Convert position to directory parameter for API consistency
+  const directory = position === 'left' ? 'source' : position === 'right' ? 'destination' : undefined;
+  
+  const url = `${API_BASE_URL}/tree${directory ? `?directory=${directory}` : ''}`;
   console.log(`Fetching directory tree from: ${url}`);
   
   try {
@@ -94,11 +98,11 @@ export async function fetchDirectoryTree(position?: 'left' | 'right'): Promise<D
     }
     
     const data = await response.json();
-    console.log(`Received directory tree for ${position || 'default'}:`, data);
+    console.log(`Received directory tree for ${directory || 'default'}:`, data);
     
     return data;
   } catch (error) {
-    console.error(`Error fetching directory tree for ${position || 'default'}:`, error);
+    console.error(`Error fetching directory tree for ${directory || 'default'}:`, error);
     
     // Return mock data in case of errors for development
     const mockData = [

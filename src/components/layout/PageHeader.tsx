@@ -37,7 +37,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   return <header className="relative z-20 flex items-center justify-between gap-2 p-2 md:p-4 bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="flex items-center gap-3">
         <div>
-          <img src="/lovable-uploads/logo-cfm.svg" alt="Logo" className={`h-8 md:h-10 ${theme === 'light' ? 'invert' : ''}`} />
+          <img src="/logo3.png" alt="Logo" className="h-8 md:h-10" />
         </div>
         
         {/* Desktop view mode switcher */}
