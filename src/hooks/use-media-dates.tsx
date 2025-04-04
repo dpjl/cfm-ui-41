@@ -86,6 +86,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse) {
   }, [mediaListResponse]);
 
   // Créer une structure de données enrichie avec des séparateurs de mois/année
+  // Maintenant avec des séparateurs positionnés uniquement au début des lignes
   const enrichedGalleryItems = useMemo(() => {
     if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
       return [];
@@ -127,11 +128,32 @@ export function useMediaDates(mediaListResponse?: MediaListResponse) {
     }
     
     // Deuxième passage : création de la liste finale avec séparateurs
-    // Utilisation de sort avec comparateur pour trier dans l'ordre chronologique inverse
+    // Tri des year-months dans l'ordre chronologique inverse
     const sortedYearMonths = Array.from(mediaByYearMonth.keys()).sort((a, b) => b.localeCompare(a));
     
+    // Pour chaque mois/année
     for (const yearMonth of sortedYearMonths) {
-      // Ajouter un séparateur pour chaque mois/année
+      // Vérifier si nous sommes au début d'une ligne (dans une grille virtuelle)
+      // Si nous ne sommes pas au début d'une ligne, ajouter des éléments vides pour compléter la ligne
+      const isStartOfRow = items.length % 5 === 0; // Assumons 5 colonnes par défaut
+      
+      if (!isStartOfRow) {
+        // Calculer combien d'éléments vides nous devons ajouter pour atteindre le début de la ligne suivante
+        const itemsToAdd = 5 - (items.length % 5);
+        for (let i = 0; i < itemsToAdd; i++) {
+          // Ajouter un élément vide de type média avec un ID spécial
+          items.push({
+            type: 'media',
+            id: `empty-${actualIndex}`,
+            index: -1,          // Index original invalide
+            actualIndex         // Index réel tenant compte des séparateurs
+          });
+          actualIndex++;
+        }
+      }
+      
+      // Maintenant nous sommes sûrs d'être au début d'une ligne
+      // Ajouter un séparateur pour ce mois/année
       items.push({
         type: 'separator',
         yearMonth,

@@ -37,29 +37,14 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
   // Get the item at this position
   const item = data.items[index];
   
-  // For separator type, we need a more robust approach that doesn't depend on columnIndex === 0
+  // For separator type, we only render it if it's at the beginning of a row (columnIndex === 0)
   if (item.type === 'separator') {
-    // Determine if this is the first occurrence of this separator in the current row
-    // We check all items in the current row to see if any previous item has the same yearMonth
-    const rowStartIndex = rowIndex * data.columnsCount;
-    const rowEndIndex = Math.min(rowStartIndex + columnIndex, data.items.length - 1);
-    
-    let isFirstSeparatorOccurrence = true;
-    // Check if the same separator appears earlier in this row
-    for (let i = rowStartIndex; i < rowEndIndex; i++) {
-      const prevItem = data.items[i];
-      if (prevItem.type === 'separator' && prevItem.yearMonth === item.yearMonth) {
-        isFirstSeparatorOccurrence = false;
-        break;
-      }
-    }
-    
-    // Only render this separator if it's the first occurrence in this row
-    if (isFirstSeparatorOccurrence) {
-      // Calculer le style normal pour ce séparateur (une cellule standard)
+    // Only render separators at the beginning of rows (columnIndex === 0)
+    if (columnIndex === 0) {
+      // Calculate the style for this separator (a standard cell)
       const separatorStyle = data.calculateCellStyle(style, columnIndex, false);
       
-      // Sur les petits écrans, ajuster la taille pour une meilleure lisibilité
+      // On small screens, adjust the height for better readability
       const finalStyle = isSmallScreen 
         ? { ...separatorStyle, height: `${parseFloat(separatorStyle.height as string) * 0.9}px` }
         : separatorStyle;
@@ -70,7 +55,7 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
         </div>
       );
     }
-    // Skip rendering duplicate separators in the same row
+    // Skip rendering separators if they're not at the beginning of a row
     return null;
   }
   
