@@ -14,6 +14,7 @@ import {
   getScrollbarWidth
 } from '@/utils/grid-utils';
 import { useMonthNavigation } from '@/hooks/use-month-navigation';
+import CurrentMonthBanner from './CurrentMonthBanner';
 
 interface VirtualizedGalleryGridProps {
   mediaResponse: MediaListResponse;
@@ -62,7 +63,9 @@ const VirtualizedGalleryGrid = memo(({
     scrollToYearMonth, 
     enrichedGalleryItems,
     navigateToPreviousMonth,
-    navigateToNextMonth
+    navigateToNextMonth,
+    currentYearMonthLabel,
+    updateCurrentYearMonthFromScroll
   } = useMediaDates(mediaResponse, columnsCount);
   
   useGalleryMediaTracking(mediaResponse, effectiveGridRef);
@@ -113,6 +116,15 @@ const VirtualizedGalleryGrid = memo(({
     };
   }, [gap]);
   
+  // Gestionnaire de défilement pour mettre à jour le mois courant
+  const handleScroll = useCallback(({ scrollTop }: { scrollTop: number }) => {
+    // Stocker la position de défilement
+    scrollPositionRef.current = scrollTop;
+    
+    // Mettre à jour le mois courant
+    updateCurrentYearMonthFromScroll(scrollTop, effectiveGridRef);
+  }, [scrollPositionRef, updateCurrentYearMonthFromScroll, effectiveGridRef]);
+  
   const itemData = useMemo(() => ({
     items: enrichedGalleryItems,
     selectedIds,
@@ -140,6 +152,12 @@ const VirtualizedGalleryGrid = memo(({
   
   return (
     <div className="w-full h-full p-2 gallery-container relative">
+      {/* Bandeau du mois courant */}
+      <CurrentMonthBanner 
+        currentMonth={currentYearMonthLabel}
+        position={position}
+      />
+      
       <AutoSizer key={`gallery-grid-${gridKey}`}>
         {({ height, width }) => {
           const { 
@@ -164,9 +182,7 @@ const VirtualizedGalleryGrid = memo(({
               overscanRowCount={5}
               overscanColumnCount={2}
               itemKey={getItemKey}
-              onScroll={({ scrollTop }) => {
-                scrollPositionRef.current = scrollTop;
-              }}
+              onScroll={handleScroll}
               initialScrollTop={scrollPositionRef.current}
               className="scrollbar-vertical"
               style={{ 
