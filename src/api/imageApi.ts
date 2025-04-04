@@ -150,39 +150,73 @@ export async function fetchMediaIds(directory: string, position: 'source' | 'des
   } catch (error) {
     console.error("Error fetching media data:", error);
     
-    // Génère environ 200 IDs de média mock avec leurs dates
     console.log("Using mock media data due to error");
-    const mockCount = 200 + Math.floor(Math.random() * 20); // Entre 200 et 220 médias
     
-    // Générer des IDs uniques pour éviter les conflits
-    // Ajout du directory (folder) dans le préfixe pour les données mock
-    const prefix = `${position}-${directory}-${filter === 'all' ? '' : filter + '-'}`;
+    // Générer des médias sur 5 ans avec une distribution variable par mois
+    const startDate = new Date();
+    startDate.setFullYear(startDate.getFullYear() - 5); // Commencer il y a 5 ans
+    const endDate = new Date(); // Aujourd'hui
     
-    // Générer des IDs pour les images (80% du total)
-    const imageCount = Math.floor(mockCount * 0.8);
-    const imageIds = Array.from({ length: imageCount }, (_, i) => 
-      `${prefix}img-${i + 1000}`
-    );
+    const mockMediaIds: string[] = [];
+    const mockMediaDates: string[] = [];
     
-    // Générer des IDs pour les vidéos (20% du total)
-    const videoCount = mockCount - imageCount;
-    const videoIds = Array.from({ length: videoCount }, (_, i) => 
-      `${prefix}vid-${i + 2000}`
-    );
+    // Fonction pour formater une date en YYYY-MM-DD
+    const formatDate = (date: Date): string => {
+      return date.toISOString().substring(0, 10);
+    };
     
-    // Combiner et mélanger les IDs
-    const mockMediaIds = [...imageIds, ...videoIds].sort(() => Math.random() - 0.5);
+    // Parcourir chaque mois sur 5 ans
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      
+      // Nombre de photos pour ce mois (entre 10 et 200)
+      const photosCount = Math.floor(Math.random() * 191) + 10;
+      
+      // Générer des ID et des dates pour ce mois
+      for (let i = 0; i < photosCount; i++) {
+        // Créer une date aléatoire dans ce mois
+        const day = Math.floor(Math.random() * 28) + 1; // Éviter les problèmes de mois à 30/31 jours
+        const randomDate = new Date(year, month, day);
+        
+        // Si on dépasse la date actuelle, arrêter
+        if (randomDate > endDate) break;
+        
+        // Ajouter l'ID et la date
+        // Générer un ID unique avec le mois/année intégré pour assurer une cohérence
+        const idSuffix = `${year}${(month + 1).toString().padStart(2, '0')}${day.toString().padStart(2, '0')}${i.toString().padStart(4, '0')}`;
+        
+        // Déterminer si c'est une image ou une vidéo (80% d'images, 20% de vidéos)
+        const isVideo = Math.random() < 0.2;
+        const mediaId = isVideo ? 
+          `${position}-${directory}-vid-${idSuffix}` : 
+          `${position}-${directory}-img-${idSuffix}`;
+        
+        mockMediaIds.push(mediaId);
+        mockMediaDates.push(formatDate(randomDate));
+      }
+      
+      // Passer au mois suivant
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
     
-    // Générer les dates correspondantes
-    const mockMediaDates = mockMediaIds.map(() => {
-      const date = randomDate();
-      return date.substring(0, 10); // Format YYYY-MM-DD
+    // Trier par date décroissante (plus récent en premier)
+    const sortedMediaArray = mockMediaIds.map((id, index) => ({
+      id,
+      date: mockMediaDates[index]
+    })).sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
     
-    console.log(`Generated ${mockMediaIds.length} mock media IDs with directory ${directory}`);
+    // Reconstruire les tableaux triés
+    const sortedMediaIds = sortedMediaArray.map(item => item.id);
+    const sortedMediaDates = sortedMediaArray.map(item => item.date);
+    
+    console.log(`Generated ${sortedMediaIds.length} mock media IDs with directory ${directory}`);
     return {
-      mediaIds: mockMediaIds,
-      mediaDates: mockMediaDates
+      mediaIds: sortedMediaIds,
+      mediaDates: sortedMediaDates
     };
   }
 }

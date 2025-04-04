@@ -44,88 +44,123 @@ export interface DbViewerData {
   }[];
 }
 
-// Mock API pour tester
+// API réelle avec fallback sur des données mockées
 const fetchDbData = async ({
   directory,
   page,
   pageSize,
   sort,
   filter,
-}: Omit<DbViewerState, 'isOpen' | 'position'>): Promise<DbViewerData> => {
-  // En production, ceci serait une vraie requête API
-  console.log('Fetching DB data with params:', { directory, page, pageSize, sort, filter });
+  position
+}: Omit<DbViewerState, 'isOpen'>): Promise<DbViewerData> => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+  console.log('Fetching DB data with params:', { directory, page, pageSize, sort, filter, position });
   
-  // Simulation d'un délai réseau
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  // Générer des données de test
-  const mockColumns = [
-    { key: 'id', label: 'ID', type: 'number' as const },
-    { key: 'filename', label: 'Nom du fichier', type: 'text' as const },
-    { key: 'date', label: 'Date', type: 'date' as const },
-    { key: 'size', label: 'Taille (Ko)', type: 'number' as const },
-    { key: 'type', label: 'Type', type: 'text' as const },
-    { key: 'resolution', label: 'Résolution', type: 'text' as const },
-    { key: 'isPublic', label: 'Public', type: 'boolean' as const },
-  ];
-  
-  // Total items pour la pagination
-  const totalItems = 235;
-  
-  // Générer des données mock pour cette page
-  const mockData = Array.from({ length: pageSize }, (_, i) => {
-    const index = (page - 1) * pageSize + i;
-    if (index >= totalItems) return null;
+  try {
+    // Construction des paramètres de requête
+    const params = new URLSearchParams();
+    params.append('directory', position);
+    params.append('folder', directory);
+    params.append('page', page.toString());
+    params.append('pageSize', pageSize.toString());
+    
+    if (sort) {
+      params.append('sortColumn', sort.column);
+      params.append('sortDirection', sort.direction);
+    }
+    
+    if (filter && filter.conditions.length > 0) {
+      params.append('filter', JSON.stringify(filter));
+    }
+    
+    // Appel à l'API
+    const response = await fetch(`${API_BASE_URL}/db?${params.toString()}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Server responded with error:", response.status, errorText);
+      throw new Error(`Failed to fetch DB data: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log("Received DB data:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching DB data, falling back to mock data:", error);
+    
+    // Fallback sur des données mockées en cas d'erreur
+    // Simulation d'un délai réseau
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Générer des données de test
+    const mockColumns = [
+      { key: 'id', label: 'ID', type: 'number' as const },
+      { key: 'filename', label: 'Nom du fichier', type: 'text' as const },
+      { key: 'date', label: 'Date', type: 'date' as const },
+      { key: 'size', label: 'Taille (Ko)', type: 'number' as const },
+      { key: 'type', label: 'Type', type: 'text' as const },
+      { key: 'resolution', label: 'Résolution', type: 'text' as const },
+      { key: 'isPublic', label: 'Public', type: 'boolean' as const },
+    ];
+    
+    // Total items pour la pagination
+    const totalItems = 235;
+    
+    // Générer des données mock pour cette page
+    const mockData = Array.from({ length: pageSize }, (_, i) => {
+      const index = (page - 1) * pageSize + i;
+      if (index >= totalItems) return null;
+      
+      return {
+        id: index + 1,
+        filename: `IMG_${(1000 + index).toString()}.jpg`,
+        date: new Date(2023, Math.floor(index / 30), (index % 30) + 1).toISOString(),
+        size: Math.floor(Math.random() * 5000) + 500,
+        type: ['JPEG', 'PNG', 'RAW', 'HEIC'][Math.floor(Math.random() * 4)],
+        resolution: ['1920x1080', '4000x3000', '3840x2160', '1280x720'][Math.floor(Math.random() * 4)],
+        isPublic: Math.random() > 0.5,
+      };
+    }).filter(Boolean);
+    
+    // Appliquer le filtre (version simplifiée pour le mock)
+    let filteredData = [...mockData];
+    if (filter && filter.conditions.length > 0) {
+      filteredData = mockData.filter(item => {
+        const results = filter.conditions.map(condition => {
+          const value = item[condition.column];
+          switch (condition.operator) {
+            case 'eq': return value === condition.value;
+            case 'contains': return String(value).toLowerCase().includes(String(condition.value).toLowerCase());
+            case 'gt': return value > condition.value;
+            case 'lt': return value < condition.value;
+            // Autres opérateurs simplifiés pour le mock
+            default: return true;
+          }
+        });
+        
+        return filter.logic === 'and' 
+          ? results.every(Boolean) 
+          : results.some(Boolean);
+      });
+    }
+    
+    // Appliquer le tri
+    if (sort) {
+      filteredData.sort((a, b) => {
+        if (a[sort.column] < b[sort.column]) return sort.direction === 'asc' ? -1 : 1;
+        if (a[sort.column] > b[sort.column]) return sort.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
     
     return {
-      id: index + 1,
-      filename: `IMG_${(1000 + index).toString()}.jpg`,
-      date: new Date(2023, Math.floor(index / 30), (index % 30) + 1).toISOString(),
-      size: Math.floor(Math.random() * 5000) + 500,
-      type: ['JPEG', 'PNG', 'RAW', 'HEIC'][Math.floor(Math.random() * 4)],
-      resolution: ['1920x1080', '4000x3000', '3840x2160', '1280x720'][Math.floor(Math.random() * 4)],
-      isPublic: Math.random() > 0.5,
+      data: filteredData,
+      totalItems,
+      totalPages: Math.ceil(totalItems / pageSize),
+      currentPage: page,
+      columns: mockColumns,
     };
-  }).filter(Boolean);
-  
-  // Appliquer le filtre (version simplifiée pour le mock)
-  let filteredData = [...mockData];
-  if (filter && filter.conditions.length > 0) {
-    filteredData = mockData.filter(item => {
-      const results = filter.conditions.map(condition => {
-        const value = item[condition.column];
-        switch (condition.operator) {
-          case 'eq': return value === condition.value;
-          case 'contains': return String(value).toLowerCase().includes(String(condition.value).toLowerCase());
-          case 'gt': return value > condition.value;
-          case 'lt': return value < condition.value;
-          // Autres opérateurs simplifiés pour le mock
-          default: return true;
-        }
-      });
-      
-      return filter.logic === 'and' 
-        ? results.every(Boolean) 
-        : results.some(Boolean);
-    });
   }
-  
-  // Appliquer le tri
-  if (sort) {
-    filteredData.sort((a, b) => {
-      if (a[sort.column] < b[sort.column]) return sort.direction === 'asc' ? -1 : 1;
-      if (a[sort.column] > b[sort.column]) return sort.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
-  
-  return {
-    data: filteredData,
-    totalItems,
-    totalPages: Math.ceil(totalItems / pageSize),
-    currentPage: page,
-    columns: mockColumns,
-  };
 };
 
 export function useDbViewer() {
@@ -147,13 +182,14 @@ export function useDbViewer() {
     error,
     refetch
   } = useQuery({
-    queryKey: ['dbViewer', state.directory, state.page, state.pageSize, state.sort, state.filter],
+    queryKey: ['dbViewer', state.directory, state.page, state.pageSize, state.sort, state.filter, state.position],
     queryFn: () => fetchDbData({
       directory: state.directory,
       page: state.page,
       pageSize: state.pageSize,
       sort: state.sort,
-      filter: state.filter
+      filter: state.filter,
+      position: state.position
     }),
     enabled: state.isOpen && Boolean(state.directory)
   });
