@@ -207,6 +207,20 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     return items;
   }, [mediaListResponse, columnsCount]);
 
+  // Créer un index optimisé des séparateurs pour une recherche efficace
+  const sortedSeparatorPositions = useMemo(() => {
+    const positions: {index: number, yearMonth: string}[] = [];
+    
+    enrichedGalleryItems.forEach((item) => {
+      if (item.type === 'separator') {
+        positions.push({index: item.index, yearMonth: item.yearMonth});
+      }
+    });
+    
+    // Tri par index croissant
+    return positions.sort((a, b) => a.index - b.index);
+  }, [enrichedGalleryItems]);
+
   // Index pour accéder rapidement à un séparateur par yearMonth
   const separatorIndices = useMemo(() => {
     const indices = new Map<string, number>();
@@ -218,54 +232,69 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     return indices;
   }, [enrichedGalleryItems]);
 
-  // Nouvelle fonction: calculer le mois-année à partir d'une position de défilement
+  // Nouvelle fonction optimisée: calculer le mois-année à partir d'une position de défilement
   const getYearMonthFromScrollPosition = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
-    if (!gridRef.current || enrichedGalleryItems.length === 0) return null;
+    if (!gridRef.current || sortedSeparatorPositions.length === 0) return null;
     
     const rowHeight = gridRef.current.props.rowHeight;
     const columnCount = gridRef.current.props.columnCount;
     
-    // Calculer l'index de la ligne approximative
-    const rowIndex = Math.floor(scrollTop / rowHeight);
-    // Calculer l'index de l'élément approximatif au début de cette ligne
-    const estimatedItemIndex = rowIndex * columnCount;
+    // Calculer l'index de la première ligne visible
+    const visibleRowIndex = Math.floor(scrollTop / rowHeight);
     
-    // Trouver le mois-année pour cet index
-    let bestYearMonth = null;
-    let closestDistance = Infinity;
+    // Calculer l'index du premier élément de cette ligne
+    const firstVisibleItemIndex = visibleRowIndex * columnCount;
     
-    // Parcourir tous les items de type séparateur
-    for (let i = 0; i < enrichedGalleryItems.length; i++) {
-      const item = enrichedGalleryItems[i];
-      if (item.type === 'separator') {
-        const distance = Math.abs(item.index - estimatedItemIndex);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          bestYearMonth = item.yearMonth;
-        }
+    // Cas spécial: vérifier si un séparateur est exactement sur la première ligne visible
+    const exactMatchIndex = sortedSeparatorPositions.findIndex(
+      sep => sep.index >= firstVisibleItemIndex && sep.index < firstVisibleItemIndex + columnCount
+    );
+    
+    if (exactMatchIndex >= 0) {
+      // Un séparateur est présent sur la première ligne visible
+      return sortedSeparatorPositions[exactMatchIndex].yearMonth;
+    }
+    
+    // Sinon, recherche binaire pour trouver le dernier séparateur avant le premier élément visible
+    let left = 0;
+    let right = sortedSeparatorPositions.length - 1;
+    let result = null;
+    
+    // Si nous sommes avant le premier séparateur
+    if (firstVisibleItemIndex < sortedSeparatorPositions[0].index) {
+      return null;
+    }
+    
+    // Recherche binaire pour trouver le séparateur précédant le premier élément visible
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      
+      if (sortedSeparatorPositions[mid].index <= firstVisibleItemIndex) {
+        // Ce séparateur est un candidat potentiel
+        result = sortedSeparatorPositions[mid].yearMonth;
+        // Chercher plus loin à droite pour un meilleur candidat
+        left = mid + 1;
+      } else {
+        // Ce séparateur est après notre position, chercher à gauche
+        right = mid - 1;
       }
     }
     
-    return bestYearMonth;
-  }, [enrichedGalleryItems]);
+    return result;
+  }, [sortedSeparatorPositions]);
 
   // Mise à jour du mois-année courant lors du défilement
   useEffect(() => {
     // Créer une fonction throttle pour éviter trop de mises à jour
     if (!throttledUpdateRef.current) {
       throttledUpdateRef.current = throttle((scrollTop: number, gridRef: React.RefObject<any>) => {
-        // Vérifier si la position de défilement a significativement changé
-        if (Math.abs(scrollTop - lastScrollPositionRef.current) > 50) {
-          lastScrollPositionRef.current = scrollTop;
-          
-          // Obtenir le nouveau mois-année
-          const newYearMonth = getYearMonthFromScrollPosition(scrollTop, gridRef);
-          
-          // Mettre à jour l'état si nécessaire
-          if (newYearMonth && newYearMonth !== currentYearMonth) {
-            setCurrentYearMonth(newYearMonth);
-            setCurrentYearMonthLabel(formatMonthYearLabel(newYearMonth));
-          }
+        // Obtenir le nouveau mois-année
+        const newYearMonth = getYearMonthFromScrollPosition(scrollTop, gridRef);
+        
+        // Mettre à jour l'état si nécessaire
+        if (newYearMonth && newYearMonth !== currentYearMonth) {
+          setCurrentYearMonth(newYearMonth);
+          setCurrentYearMonthLabel(formatMonthYearLabel(newYearMonth));
         }
       }, 100);
     }

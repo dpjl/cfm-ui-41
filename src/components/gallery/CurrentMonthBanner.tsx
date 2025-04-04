@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 interface CurrentMonthBannerProps {
   currentMonth: string | null;
@@ -11,15 +12,25 @@ const CurrentMonthBanner: React.FC<CurrentMonthBannerProps> = ({
   currentMonth,
   position
 }) => {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  
   if (!currentMonth) return null;
   
-  // Déterminer la classe de couleur en fonction de la position
+  // Déterminer les classes de couleur en fonction de la position
   const colorClass = position === 'source' 
-    ? 'bg-primary/80 text-primary-foreground' 
-    : 'bg-secondary/80 text-secondary-foreground';
+    ? 'bg-primary/60 text-primary-foreground border-primary/30' 
+    : 'bg-secondary/60 text-secondary-foreground border-secondary/30';
+  
+  // Classes de base pour le bandeau
+  const baseClasses = "backdrop-blur-sm font-medium shadow-sm";
+  
+  // Classes responsives
+  const sizeClasses = isMobile 
+    ? "text-xs py-0.5 px-2 top-1" 
+    : "text-sm py-1 px-3 top-2";
   
   return (
-    <div className="sticky top-0 z-30 w-full py-0.5 px-2">
+    <div className="absolute z-40 w-full flex justify-center pointer-events-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentMonth}
@@ -27,7 +38,11 @@ const CurrentMonthBanner: React.FC<CurrentMonthBannerProps> = ({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className={`rounded-md py-1 px-3 text-center text-sm font-medium shadow-sm ${colorClass}`}
+          className={`rounded-full ${baseClasses} ${sizeClasses} ${colorClass} border`}
+          style={{
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            maxWidth: isMobile ? '80%' : '50%',
+          }}
         >
           {currentMonth}
         </motion.div>
