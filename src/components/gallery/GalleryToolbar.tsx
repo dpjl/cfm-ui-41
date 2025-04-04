@@ -5,9 +5,6 @@ import { SelectionMode } from '../../hooks/use-gallery-selection';
 import { useMediaQuery } from '../../hooks/use-media-query';
 import { 
   CheckSquare, 
-  Square, 
-  ChevronLeft, 
-  ChevronRight, 
   Settings, 
   Maximize, 
   Minimize,
@@ -30,10 +27,10 @@ interface GalleryToolbarProps {
   onToggleSidebar?: () => void;
   selectionMode: SelectionMode;
   onToggleSelectionMode: () => void;
-  // Nouvelles props pour le toggle de vue
+  // Props pour le toggle de vue
   mobileViewMode?: GalleryViewMode;
   onToggleFullView?: () => void;
-  // Nouvelles props pour la navigation mensuelle
+  // Props pour la navigation mensuelle
   onNavigateToPreviousMonth?: () => void;
   onNavigateToNextMonth?: () => void;
 }
@@ -55,16 +52,12 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
 }) => {
   const isMobile = useIsMobile();
   
-  // Définir l'icône du bouton sidebar selon la position (gauche/droite)
-  const SidebarIcon = position === 'source' ? ChevronLeft : ChevronRight;
-  const SidebarLabel = position === 'source' ? 'Options Left' : 'Options Right';
-
   // Détermine si on est en vue plein écran pour cette galerie
   const isFullView = (position === 'source' && mobileViewMode === 'left') || 
                      (position === 'destination' && mobileViewMode === 'right');
 
-  // Boutons de navigation mensuelle (uniquement sur desktop)
-  const monthNavigationButtons = !isMobile && onNavigateToPreviousMonth && onNavigateToNextMonth ? (
+  // Création des boutons de navigation mensuelle (maintenant toujours visibles)
+  const monthNavigationButtons = onNavigateToPreviousMonth && onNavigateToNextMonth ? (
     <>
       <TooltipProvider>
         <Tooltip>
@@ -75,7 +68,7 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
               onClick={onNavigateToPreviousMonth}
               className="h-8 w-8"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={isMobile ? 16 : 18} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
@@ -93,7 +86,7 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
               onClick={onNavigateToNextMonth}
               className="h-8 w-8"
             >
-              <ArrowRight size={18} />
+              <ArrowRight size={isMobile ? 16 : 18} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
@@ -104,7 +97,7 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
     </>
   ) : null;
 
-  // Pour la galerie de gauche (source), ordre: sidebar, select all, clear, mode, navigation, view toggle
+  // Pour la galerie de gauche (source)
   const leftGalleryToolbar = (
     <>
       {onToggleSidebar && (
@@ -119,63 +112,22 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
               >
                 {position === 'source' ? (
                   <div className="flex items-center justify-center">
-                    <ChevronLeft size={isMobile ? 16 : 18} className="text-muted-foreground" />
-                    <Settings size={isMobile ? 14 : 16} className="ml-[-4px]" />
+                    <Settings size={isMobile ? 14 : 16} />
                   </div>
                 ) : (
                   <div className="flex items-center justify-center">
-                    <Settings size={isMobile ? 14 : 16} className="mr-[-4px]" />
-                    <ChevronRight size={isMobile ? 16 : 18} className="text-muted-foreground" />
+                    <Settings size={isMobile ? 14 : 16} />
                   </div>
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              <p>{SidebarLabel}</p>
+              <p>Options</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
 
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onSelectAll}
-              disabled={mediaIds.length === 0}
-              className="h-8 w-8"
-            >
-              <CheckSquare size={isMobile ? 18 : 20} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Select All</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      
-      {selectedIds.length > 0 && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onDeselectAll}
-                className="h-8 w-8"
-              >
-                <Square size={isMobile ? 18 : 20} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Clear Selection</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-      
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -204,7 +156,7 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
         </Tooltip>
       </TooltipProvider>
 
-      {/* Boutons de navigation mensuelle (uniquement sur desktop) */}
+      {/* Boutons de navigation mensuelle (maintenant toujours visibles) */}
       {monthNavigationButtons}
 
       {/* Bouton Agrandir/Réduire pour la vue */}
@@ -234,7 +186,7 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
     </>
   );
 
-  // Pour la galerie de droite (destination), ordre: view toggle, navigation, mode, clear, select all, sidebar
+  // Pour la galerie de droite (destination)
   const rightGalleryToolbar = (
     <>
       {/* Bouton Agrandir/Réduire pour la vue */}
@@ -262,7 +214,7 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
         </TooltipProvider>
       )}
 
-      {/* Boutons de navigation mensuelle (uniquement sur desktop) */}
+      {/* Boutons de navigation mensuelle (maintenant toujours visibles) */}
       {monthNavigationButtons}
 
       <TooltipProvider>
@@ -293,45 +245,6 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
         </Tooltip>
       </TooltipProvider>
       
-      {selectedIds.length > 0 && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onDeselectAll}
-                className="h-8 w-8"
-              >
-                <Square size={isMobile ? 18 : 20} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Clear Selection</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onSelectAll}
-              disabled={mediaIds.length === 0}
-              className="h-8 w-8"
-            >
-              <CheckSquare size={isMobile ? 18 : 20} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Select All</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      
       {onToggleSidebar && (
         <TooltipProvider>
           <Tooltip>
@@ -344,19 +257,17 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
               >
                 {position === 'source' ? (
                   <div className="flex items-center justify-center">
-                    <ChevronLeft size={isMobile ? 16 : 18} className="text-muted-foreground" />
-                    <Settings size={isMobile ? 14 : 16} className="ml-[-4px]" />
+                    <Settings size={isMobile ? 14 : 16} />
                   </div>
                 ) : (
                   <div className="flex items-center justify-center">
-                    <Settings size={isMobile ? 14 : 16} className="mr-[-4px]" />
-                    <ChevronRight size={isMobile ? 16 : 18} className="text-muted-foreground" />
+                    <Settings size={isMobile ? 14 : 16} />
                   </div>
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              <p>{SidebarLabel}</p>
+              <p>Options</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

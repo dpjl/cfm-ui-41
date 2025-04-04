@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { MediaListResponse, GalleryItem } from '@/types/gallery';
 
 interface MediaDateIndex {
@@ -85,6 +84,20 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       monthsByYear: monthsByYearMap
     };
   }, [mediaListResponse]);
+
+  // NOUVEAU: Initialiser currentYearMonth avec le premier mois disponible
+  useEffect(() => {
+    // Si currentYearMonth n'est pas défini et que nous avons des années disponibles
+    if (!currentYearMonth && dateIndex.years.length > 0) {
+      const mostRecentYear = dateIndex.years[0]; // Les années sont triées par ordre décroissant
+      const firstAvailableMonth = dateIndex.monthsByYear.get(mostRecentYear)?.[0];
+      
+      if (firstAvailableMonth) {
+        const initialYearMonth = `${mostRecentYear}-${firstAvailableMonth.toString().padStart(2, '0')}`;
+        setCurrentYearMonth(initialYearMonth);
+      }
+    }
+  }, [dateIndex, currentYearMonth]);
 
   // Créer une structure de données enrichie avec des séparateurs de mois/année
   // Maintenant avec des séparateurs positionnés uniquement au début des lignes

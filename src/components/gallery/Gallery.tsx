@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import VirtualizedGalleryGrid from './VirtualizedGalleryGrid';
@@ -31,7 +32,7 @@ interface GalleryProps {
   gap?: number;
   mobileViewMode?: GalleryViewMode;
   onToggleFullView?: () => void;
-  gridRef?: React.RefObject<any>; // Added this prop to fix the error
+  gridRef?: React.RefObject<any>;
 }
 
 const Gallery: React.FC<GalleryProps> = ({
@@ -52,7 +53,7 @@ const Gallery: React.FC<GalleryProps> = ({
   gap = 8,
   mobileViewMode,
   onToggleFullView,
-  gridRef // Added this prop to the destructuring pattern
+  gridRef
 }) => {
   const [mediaInfoMap, setMediaInfoMap] = useState<Map<string, DetailedMediaInfo | null>>(new Map());
   const { t } = useLanguage();
@@ -84,7 +85,7 @@ const Gallery: React.FC<GalleryProps> = ({
     });
   }, []);
 
-  // Référence à la fonction de navigation mensuelle (sera définie par l'enfant VirtualizedGalleryGrid)
+  // Références aux fonctions de navigation mensuelle (définies par VirtualizedGalleryGrid)
   const navigateToPreviousMonthRef = useRef<() => boolean>(() => false);
   const navigateToNextMonthRef = useRef<() => boolean>(() => false);
   
@@ -103,7 +104,7 @@ const Gallery: React.FC<GalleryProps> = ({
     return false;
   }, []);
   
-  // Gestionnaire pour recevoir les références aux fonctions de navigation depuis VirtualizedGalleryGrid
+  // Fonction pour recevoir les références aux fonctions de navigation depuis VirtualizedGalleryGrid
   const handleSetNavigationFunctions = useCallback((
     prevFn: () => boolean, 
     nextFn: () => boolean
@@ -111,19 +112,6 @@ const Gallery: React.FC<GalleryProps> = ({
     navigateToPreviousMonthRef.current = prevFn;
     navigateToNextMonthRef.current = nextFn;
   }, []);
-  
-  // Gestionnaire de swipe pour mobile
-  const handleHorizontalSwipe = useCallback((direction: 'left' | 'right') => {
-    if (!isMobile) return;
-    
-    if (direction === 'left') {
-      // Swipe gauche = mois suivant
-      handleNavigateNextMonth();
-    } else if (direction === 'right') {
-      // Swipe droite = mois précédent
-      handleNavigatePrevMonth();
-    }
-  }, [isMobile, handleNavigateNextMonth, handleNavigatePrevMonth]);
 
   const shouldShowInfoPanel = selectedIds.length > 0;
   
@@ -172,8 +160,8 @@ const Gallery: React.FC<GalleryProps> = ({
         onToggleSelectionMode={selection.toggleSelectionMode}
         mobileViewMode={mobileViewMode}
         onToggleFullView={onToggleFullView}
-        onNavigateToPreviousMonth={!isMobile ? handleNavigatePrevMonth : undefined}
-        onNavigateToNextMonth={!isMobile ? handleNavigateNextMonth : undefined}
+        onNavigateToPreviousMonth={handleNavigatePrevMonth}
+        onNavigateToNextMonth={handleNavigateNextMonth}
       />
       
       <div className="flex-1 overflow-hidden relative scrollbar-vertical">
@@ -204,9 +192,8 @@ const Gallery: React.FC<GalleryProps> = ({
             updateMediaInfo={updateMediaInfo}
             position={position}
             gap={gap}
-            onNavigateMonth={isMobile ? (direction) => handleHorizontalSwipe(direction === 'prev' ? 'right' : 'left') : undefined}
             onSetNavigationFunctions={handleSetNavigationFunctions}
-            gridRef={gridRef || gridRef} // Use the provided gridRef or the internal one
+            gridRef={gridRef || gridRef}
           />
         )}
       </div>

@@ -25,7 +25,6 @@ interface VirtualizedGalleryGridProps {
   updateMediaInfo?: (id: string, info: DetailedMediaInfo) => void;
   position: 'source' | 'destination';
   gap?: number;
-  onNavigateMonth?: (direction: 'prev' | 'next') => void;
   onSetNavigationFunctions?: (prevFn: () => boolean, nextFn: () => boolean) => void;
   gridRef?: React.RefObject<any>;
 }
@@ -44,7 +43,6 @@ const VirtualizedGalleryGrid = memo(({
   updateMediaInfo,
   position = 'source',
   gap = 8,
-  onNavigateMonth,
   onSetNavigationFunctions,
   gridRef: externalGridRef
 }: VirtualizedGalleryGridProps) => {
@@ -71,20 +69,12 @@ const VirtualizedGalleryGrid = memo(({
   
   // Handlers pour la navigation mensuelle
   const handlePrevMonth = useCallback(() => {
-    const success = navigateToPreviousMonth(effectiveGridRef);
-    if (success && onNavigateMonth) {
-      onNavigateMonth('prev');
-    }
-    return success;
-  }, [navigateToPreviousMonth, effectiveGridRef, onNavigateMonth]);
+    return navigateToPreviousMonth(effectiveGridRef);
+  }, [navigateToPreviousMonth, effectiveGridRef]);
   
   const handleNextMonth = useCallback(() => {
-    const success = navigateToNextMonth(effectiveGridRef);
-    if (success && onNavigateMonth) {
-      onNavigateMonth('next');
-    }
-    return success;
-  }, [navigateToNextMonth, effectiveGridRef, onNavigateMonth]);
+    return navigateToNextMonth(effectiveGridRef);
+  }, [navigateToNextMonth, effectiveGridRef]);
   
   // Utiliser le hook de navigation mensuelle pour les raccourcis clavier
   useMonthNavigation({
