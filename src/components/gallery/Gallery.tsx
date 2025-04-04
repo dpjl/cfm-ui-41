@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import VirtualizedGalleryGrid from './VirtualizedGalleryGrid';
@@ -32,6 +31,7 @@ interface GalleryProps {
   gap?: number;
   mobileViewMode?: GalleryViewMode;
   onToggleFullView?: () => void;
+  gridRef?: React.RefObject<any>; // Added this prop to fix the error
 }
 
 const Gallery: React.FC<GalleryProps> = ({
@@ -51,14 +51,14 @@ const Gallery: React.FC<GalleryProps> = ({
   onToggleSidebar,
   gap = 8,
   mobileViewMode,
-  onToggleFullView
+  onToggleFullView,
+  gridRef // Added this prop to the destructuring pattern
 }) => {
   const [mediaInfoMap, setMediaInfoMap] = useState<Map<string, DetailedMediaInfo | null>>(new Map());
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const mediaIds = mediaResponse?.mediaIds || [];
-  const gridRef = useRef<any>(null);
   
   const selection = useGallerySelection({
     mediaIds,
@@ -206,7 +206,7 @@ const Gallery: React.FC<GalleryProps> = ({
             gap={gap}
             onNavigateMonth={isMobile ? (direction) => handleHorizontalSwipe(direction === 'prev' ? 'right' : 'left') : undefined}
             onSetNavigationFunctions={handleSetNavigationFunctions}
-            gridRef={gridRef}
+            gridRef={gridRef || gridRef} // Use the provided gridRef or the internal one
           />
         )}
       </div>
