@@ -1,7 +1,10 @@
+
 import React from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Database } from 'lucide-react';
 import { GalleryViewMode } from '@/types/gallery';
 import FilterOptions from '@/components/sidebar/FilterOptions';
 import FolderTreeSection from '@/components/sidebar/FolderTreeSection';
@@ -22,6 +25,7 @@ interface AppSidebarProps {
     [key: string]: number;
   };
   currentViewMode?: string;
+  onOpenDbViewer?: (directoryId: string, position: 'source' | 'destination') => void;
 }
 
 const AppSidebar: React.FC<AppSidebarProps> = ({ 
@@ -33,13 +37,23 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   mobileViewMode = 'both',
   onColumnsChange,
   columnValues,
-  currentViewMode
+  currentViewMode,
+  onOpenDbViewer
 }) => {
   const { t } = useLanguage();
 
   // Pour forcer un re-rendu quand les valeurs changent 
   const sliderKey = React.useMemo(() => 
     Object.values(columnValues).join('-'), [columnValues]);
+
+  const handleOpenDbViewer = () => {
+    if (onOpenDbViewer && selectedDirectoryId) {
+      onOpenDbViewer(
+        selectedDirectoryId, 
+        position === 'left' ? 'source' : 'destination'
+      );
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-card/90 backdrop-blur-sm w-full overflow-hidden">
@@ -62,6 +76,20 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             onColumnsChange={onColumnsChange}
           />
         </div>
+        
+        {/* Database Viewer Button */}
+        {onOpenDbViewer && selectedDirectoryId && (
+          <div className="mt-3">
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center justify-center gap-2"
+              onClick={handleOpenDbViewer}
+            >
+              <Database className="h-4 w-4" />
+              <span>Voir les données</span>
+            </Button>
+          </div>
+        )}
       </div>
       
       {/* Folder tree section */}

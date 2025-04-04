@@ -3,6 +3,8 @@ import React from 'react';
 import SidePanel from '@/components/layout/SidePanel';
 import GalleriesContainer from '@/components/layout/GalleriesContainer';
 import AppSidebar from '@/components/AppSidebar';
+import DbViewer from '@/components/db-viewer/DbViewer';
+import { useDbViewer } from '@/hooks/use-db-viewer';
 import { useGalleryContext } from '@/contexts/GalleryContext';
 
 const GalleryLayout: React.FC = () => {
@@ -30,7 +32,7 @@ const GalleryLayout: React.FC = () => {
     activeSide,
     deleteMutation,
     handleDeleteSelected,
-    handleDelete, // Ajout de handleDelete du contexte
+    handleDelete,
     
     // Panel state
     leftPanelOpen,
@@ -52,6 +54,9 @@ const GalleryLayout: React.FC = () => {
     isMobile,
     getViewModeType
   } = useGalleryContext();
+  
+  // Initialiser le hook dbViewer
+  const dbViewerState = useDbViewer();
   
   // Récupérer le nombre de colonnes
   const columnsCountLeft = getCurrentColumnsLeft();
@@ -75,6 +80,11 @@ const GalleryLayout: React.FC = () => {
     };
   }
   
+  // Handler pour ouvrir le visualiseur de base de données
+  const handleOpenDbViewer = (directoryId: string, position: 'source' | 'destination') => {
+    dbViewerState.openViewer(directoryId, position);
+  };
+  
   return (
     <div className="flex h-full overflow-hidden mt-2 relative">
       <SidePanel 
@@ -94,6 +104,7 @@ const GalleryLayout: React.FC = () => {
           onColumnsChange={(count) => updateColumnCount('left', count)}
           columnValues={leftColumnValues}
           currentViewMode={currentViewMode}
+          onOpenDbViewer={handleOpenDbViewer}
         />
       </SidePanel>
 
@@ -112,7 +123,7 @@ const GalleryLayout: React.FC = () => {
           activeSide={activeSide}
           deleteMutation={deleteMutation}
           handleDeleteSelected={handleDeleteSelected}
-          handleDelete={handleDelete} // Passage de handleDelete comme prop
+          handleDelete={handleDelete}
           mobileViewMode={viewMode}
           setMobileViewMode={setViewMode}
           leftFilter={leftFilter}
@@ -140,8 +151,12 @@ const GalleryLayout: React.FC = () => {
           onColumnsChange={(count) => updateColumnCount('right', count)}
           columnValues={rightColumnValues}
           currentViewMode={currentViewMode}
+          onOpenDbViewer={handleOpenDbViewer}
         />
       </SidePanel>
+      
+      {/* Intégrer le composant DbViewer */}
+      <DbViewer dbViewerState={dbViewerState} />
     </div>
   );
 };
