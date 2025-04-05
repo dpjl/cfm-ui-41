@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { MediaListResponse, GalleryItem } from '@/types/gallery';
 import { throttle } from 'lodash';
@@ -37,23 +38,49 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
   // Référence à la grille externe pour le repositionnement
   const externalGridRefRef = useRef<React.RefObject<any> | null>(null);
 
+  // Logs pour debugging
+  const logsEnabledRef = useRef<boolean>(true);
+  const debugLog = useCallback((message: string, data?: any) => {
+    if (logsEnabledRef.current) {
+      if (data) {
+        console.log(`[useMediaDates] ${message}`, data);
+      } else {
+        console.log(`[useMediaDates] ${message}`);
+      }
+    }
+  }, []);
+
   // Méthode pour sauvegarder la référence externe de la grille
   const setExternalGridRef = useCallback((ref: React.RefObject<any> | null) => {
+    debugLog(`setExternalGridRef called, previous ref: ${externalGridRefRef.current ? 'exists' : 'null'}, new ref: ${ref ? 'exists' : 'null'}`);
     externalGridRefRef.current = ref;
-  }, []);
+    
+    // Log les propriétés de la grille si disponible
+    if (ref?.current) {
+      const gridProps = {
+        columnCount: ref.current.props?.columnCount,
+        rowHeight: ref.current.props?.rowHeight,
+        rowCount: ref.current.props?.rowCount,
+        width: ref.current.props?.width,
+        height: ref.current.props?.height
+      };
+      debugLog('Grid properties:', gridProps);
+    }
+  }, [debugLog]);
 
   // Mettre à jour la référence du nombre de colonnes lorsqu'il change
   useEffect(() => {
     // Si le nombre de colonnes a changé et que nous avons un mois courant
     if (gridColumnsRef.current !== columnsCount && currentYearMonth) {
       // Journaliser le changement pour le débogage
-      console.log(`Columns changed from ${gridColumnsRef.current} to ${columnsCount}, repositioning to ${currentYearMonth}`);
+      debugLog(`Columns changed from ${gridColumnsRef.current} to ${columnsCount}, repositioning to ${currentYearMonth}`);
       
       // Sauvegarder le mois courant avant le changement
       lastYearMonthRef.current = currentYearMonth;
       
       // Désactiver temporairement les mises à jour basées sur le défilement
       isRepositioningRef.current = true;
+      debugLog('Scroll-based updates disabled for repositioning');
       
       // Mettre à jour la référence des colonnes
       gridColumnsRef.current = columnsCount;
@@ -68,12 +95,24 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
           // Restaurer la position au même mois qu'avant le changement
           // Utiliser la référence externe de grille si disponible
           if (!isNaN(year) && !isNaN(month)) {
-            console.log(`Repositioning to ${year}-${month} after column change`);
+            debugLog(`Repositioning to ${year}-${month} after column change`);
+            
+            if (externalGridRefRef.current?.current) {
+              const gridProps = {
+                columnCount: externalGridRefRef.current.current.props?.columnCount,
+                rowHeight: externalGridRefRef.current.current.props?.rowHeight,
+                rowCount: externalGridRefRef.current.current.props?.rowCount
+              };
+              debugLog('Grid properties before scrollToYearMonth:', gridProps);
+            } else {
+              debugLog('Warning: Grid reference not available for scrollToYearMonth');
+            }
+            
             scrollToYearMonth(year, month, externalGridRefRef.current);
             
             // Réactiver les mises à jour basées sur le défilement après un court délai
             setTimeout(() => {
-              console.log('Re-enabling scroll-based updates');
+              debugLog('Re-enabling scroll-based updates');
               isRepositioningRef.current = false;
             }, 300);
           }
@@ -83,10 +122,12 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       // Si c'est la première initialisation, simplement mettre à jour la référence
       gridColumnsRef.current = columnsCount;
     }
-  }, [columnsCount]);
+  }, [columnsCount, currentYearMonth, debugLog, scrollToYearMonth]);
 
   // Construire les index à partir des données reçues
   const dateIndex = useMemo(() => {
+    debugLog(`Building dateIndex, mediaListResponse exists: ${!!mediaListResponse}, mediaIds length: ${mediaListResponse?.mediaIds?.length || 0}`);
+    
     if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
       return {
         idToDate: new Map(),
@@ -146,13 +187,17 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       monthsByYearMap.set(year, Array.from(months).sort((a, b) => a - b));
     });
 
-    return {
+    const result = {
       idToDate,
       yearMonthToIndex,
       years,
       monthsByYear: monthsByYearMap
     };
-  }, [mediaListResponse]);
+    
+    debugLog(`dateIndex built with ${years.length} years, yearMonthToIndex size: ${yearMonthToIndex.size}`);
+    
+    return result;
+  }, [mediaListResponse, debugLog]);
 
   // Initialiser currentYearMonth avec le mois le plus récent disponible
   useEffect(() => {
@@ -163,14 +208,17 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       if (monthsForYear && monthsForYear.length > 0) {
         const mostRecentMonth = monthsForYear[monthsForYear.length - 1]; 
         const initialYearMonth = `${mostRecentYear}-${mostRecentMonth.toString().padStart(2, '0')}`;
+        debugLog(`Initializing currentYearMonth to ${initialYearMonth}`);
         setCurrentYearMonth(initialYearMonth);
         setCurrentYearMonthLabel(formatMonthYearLabel(initialYearMonth));
       }
     }
-  }, [dateIndex, currentYearMonth]);
+  }, [dateIndex, currentYearMonth, debugLog]);
 
   // Créer une structure de données enrichie avec des séparateurs de mois/année
   const enrichedGalleryItems = useMemo(() => {
+    debugLog(`Calculating enrichedGalleryItems with columnsCount: ${columnsCount}`);
+    
     if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
       return [];
     }
@@ -214,6 +262,8 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     // Tri des year-months dans l'ordre chronologique inverse
     const sortedYearMonths = Array.from(mediaByYearMonth.keys()).sort((a, b) => b.localeCompare(a));
     
+    debugLog(`Found ${sortedYearMonths.length} year-months for separator creation`);
+    
     // Pour chaque mois/année
     for (const yearMonth of sortedYearMonths) {
       // Vérifier si nous sommes au début d'une ligne (dans une grille virtuelle)
@@ -225,6 +275,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
         // Calculer combien d'éléments vides nous devons ajouter pour atteindre le début de la ligne suivante
         // Utiliser columnsCount au lieu de la valeur codée en dur
         const itemsToAdd = columnsCount - (items.length % columnsCount);
+        debugLog(`Adding ${itemsToAdd} empty items to align separator for ${yearMonth}`);
         for (let i = 0; i < itemsToAdd; i++) {
           // Ajouter un élément vide explicite qui ne déclenchera pas de requêtes
           items.push({
@@ -260,8 +311,10 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       }
     }
 
+    debugLog(`Created ${items.length} enriched gallery items (including separators and empty cells)`);
+    
     return items;
-  }, [mediaListResponse, columnsCount]); // Correction: utiliser directement columnsCount au lieu de gridColumnsRef.current
+  }, [mediaListResponse, columnsCount, debugLog]); // Correction: utiliser directement columnsCount au lieu de gridColumnsRef.current
 
   // Créer un index optimisé des séparateurs pour une recherche efficace
   const sortedSeparatorPositions = useMemo(() => {
@@ -274,8 +327,19 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     });
     
     // Tri par index croissant
-    return positions.sort((a, b) => a.index - b.index);
-  }, [enrichedGalleryItems]);
+    const sorted = positions.sort((a, b) => a.index - b.index);
+    
+    debugLog(`Created sortedSeparatorPositions with ${sorted.length} separators`);
+    // Log quelques exemples de positions sans afficher toute la liste
+    if (sorted.length > 0) {
+      debugLog(`First separator: index=${sorted[0].index}, yearMonth=${sorted[0].yearMonth}`);
+      if (sorted.length > 1) {
+        debugLog(`Last separator: index=${sorted[sorted.length-1].index}, yearMonth=${sorted[sorted.length-1].yearMonth}`);
+      }
+    }
+    
+    return sorted;
+  }, [enrichedGalleryItems, debugLog]);
 
   // Index pour accéder rapidement à un séparateur par yearMonth
   const separatorIndices = useMemo(() => {
@@ -285,16 +349,30 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
         indices.set(item.yearMonth, index);
       }
     });
+    
+    debugLog(`Created separatorIndices map with ${indices.size} entries`);
+    
     return indices;
-  }, [enrichedGalleryItems]);
+  }, [enrichedGalleryItems, debugLog]);
 
   // Nouvelle fonction optimisée: calculer le mois-année à partir d'une position de défilement
   // Ajout d'une zone de tolérance pour la détection du mois courant
   const getYearMonthFromScrollPosition = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
-    if (!gridRef.current || sortedSeparatorPositions.length === 0) return null;
+    // Ne pas calculer si désactivé pendant le repositionnement
+    if (isRepositioningRef.current) {
+      debugLog('getYearMonthFromScrollPosition skipped: repositioning in progress');
+      return null;
+    }
+    
+    if (!gridRef.current || sortedSeparatorPositions.length === 0) {
+      debugLog(`getYearMonthFromScrollPosition failed: gridRef.current=${!!gridRef.current}, separators=${sortedSeparatorPositions.length}`);
+      return null;
+    }
     
     const rowHeight = gridRef.current.props.rowHeight;
     const columnCount = gridRef.current.props.columnCount;
+    
+    debugLog(`Calculating yearMonth from scrollTop=${scrollTop}, rowHeight=${rowHeight}, columnCount=${columnCount}`);
     
     // Calculer l'index de la première ligne visible
     const visibleRowIndex = Math.floor(scrollTop / rowHeight);
@@ -309,10 +387,13 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       const rowStartIndex = (visibleRowIndex + i) * columnCount;
       const rowEndIndex = rowStartIndex + columnCount - 1;
       
+      debugLog(`Checking for separators in row ${visibleRowIndex + i}, indices ${rowStartIndex}-${rowEndIndex}`);
+      
       // Chercher des séparateurs dans cette ligne
       for (const sep of sortedSeparatorPositions) {
         if (sep.index >= rowStartIndex && sep.index <= rowEndIndex) {
           separatorsInToleranceZone.push(sep);
+          debugLog(`Found separator in tolerance zone: index=${sep.index}, yearMonth=${sep.yearMonth}`);
         }
       }
     }
@@ -322,14 +403,20 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     if (separatorsInToleranceZone.length > 0) {
       // Trier par index croissant pour obtenir le premier séparateur
       separatorsInToleranceZone.sort((a, b) => a.index - b.index);
-      return separatorsInToleranceZone[0].yearMonth;
+      const result = separatorsInToleranceZone[0].yearMonth;
+      debugLog(`Returning yearMonth from tolerance zone: ${result}`);
+      return result;
     }
+    
+    debugLog('No separators found in tolerance zone, using binary search');
     
     // Si aucun séparateur n'est trouvé dans la zone de tolérance,
     // revenir à la méthode originale (recherche binaire)
     
     // Calculer l'index du premier élément de la première ligne visible
     const firstVisibleItemIndex = visibleRowIndex * columnCount;
+    
+    debugLog(`Binary search for firstVisibleItemIndex=${firstVisibleItemIndex}`);
     
     // Recherche binaire pour trouver le dernier séparateur avant le premier élément visible
     let left = 0;
@@ -338,6 +425,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     
     // Si nous sommes avant le premier séparateur
     if (firstVisibleItemIndex < sortedSeparatorPositions[0].index) {
+      debugLog('Position is before first separator');
       return null;
     }
     
@@ -356,8 +444,14 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       }
     }
     
+    if (result) {
+      debugLog(`Binary search result: ${result}`);
+    } else {
+      debugLog('Binary search found no result');
+    }
+    
     return result;
-  }, [sortedSeparatorPositions]);
+  }, [sortedSeparatorPositions, debugLog]);
 
   // Mise à jour du mois-année courant lors du défilement
   useEffect(() => {
@@ -369,16 +463,19 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
         
         // Mettre à jour l'état si nécessaire
         if (newYearMonth && newYearMonth !== currentYearMonth) {
+          debugLog(`Updating current year-month from ${currentYearMonth} to ${newYearMonth}`);
           setCurrentYearMonth(newYearMonth);
           setCurrentYearMonthLabel(formatMonthYearLabel(newYearMonth));
         }
       }, 100);
     }
-  }, [getYearMonthFromScrollPosition, currentYearMonth]);
+  }, [getYearMonthFromScrollPosition, currentYearMonth, debugLog]);
 
   // Fonctions pour la navigation par date - MISE À JOUR avec synchronisation directe
   const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
     const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
+    
+    debugLog(`scrollToYearMonth called: ${yearMonth}`);
     
     // Mise à jour directe des états pour éviter le décalage
     setCurrentYearMonth(yearMonth);
@@ -387,15 +484,22 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     // Si aucun gridRef n'est fourni, essayer d'utiliser la référence externe sauvegardée
     if (!gridRef && externalGridRefRef.current) {
       gridRef = externalGridRefRef.current;
+      debugLog('Using saved external grid reference');
     }
     
     // Si toujours pas de gridRef valide, on ne fait que mettre à jour les états
-    if (!gridRef?.current) return true;
+    if (!gridRef?.current) {
+      debugLog('No valid grid reference available for scrolling');
+      return true;
+    }
+    
+    debugLog(`Grid reference found, checking separator index for ${yearMonth}`);
     
     // Essayer d'abord avec l'index du séparateur (si disponible)
     const separatorIndex = separatorIndices.get(yearMonth);
     if (separatorIndex !== undefined && gridRef.current) {
       const rowIndex = Math.floor(separatorIndex / gridRef.current.props.columnCount);
+      debugLog(`Scrolling to separator at index ${separatorIndex}, row ${rowIndex}`);
       gridRef.current.scrollToItem({
         align: 'start',
         rowIndex
@@ -403,40 +507,49 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       return true;
     }
     
+    debugLog(`No separator index found, trying with yearMonthToIndex for ${yearMonth}`);
+    
     // Sinon, utiliser l'ancienne méthode avec yearMonthToIndex
     const mediaIndex = dateIndex.yearMonthToIndex.get(yearMonth);
     if (mediaIndex !== undefined && gridRef.current) {
+      const rowIndex = Math.floor(mediaIndex / gridRef.current.props.columnCount);
+      debugLog(`Scrolling to media index ${mediaIndex}, row ${rowIndex}`);
       gridRef.current.scrollToItem({
         align: 'start',
-        rowIndex: Math.floor(mediaIndex / gridRef.current.props.columnCount)
+        rowIndex
       });
       return true;
     }
     
+    debugLog(`Failed to scroll: no index found for ${yearMonth}`);
     return false;
-  }, [dateIndex, separatorIndices]);
+  }, [dateIndex, separatorIndices, debugLog]);
 
   // Fonction pour mettre à jour le mois courant lors d'un défilement
   const updateCurrentYearMonthFromScroll = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
     // Ne pas mettre à jour si nous sommes en train de repositionner
     if (isRepositioningRef.current) {
-      console.log('Scroll update skipped: repositioning in progress');
+      debugLog('Scroll update skipped: repositioning in progress');
       return;
     }
     
     // Sauvegarder la référence externe de la grille pour les repositionnements futurs
     if (gridRef && !externalGridRefRef.current) {
+      debugLog('Saving external grid reference');
       externalGridRefRef.current = gridRef;
     }
     
     if (throttledUpdateRef.current) {
+      debugLog(`Throttled update called with scrollTop=${scrollTop}`);
       throttledUpdateRef.current(scrollTop, gridRef);
     }
-  }, []);
+  }, [debugLog]);
 
   // MODIFICATION: Naviguer au mois suivant chronologiquement (plus récent)
   const navigateToPreviousMonth = useCallback((gridRef: React.RefObject<any>) => {
     if (!currentYearMonth || !gridRef.current) return false;
+    
+    debugLog(`navigateToPreviousMonth called, current=${currentYearMonth}`);
     
     // Obtenir tous les yearMonth disponibles triés chronologiquement (du plus récent au plus ancien)
     const allYearMonths = Array.from(dateIndex.yearMonthToIndex.keys()).sort((a, b) => b.localeCompare(a));
@@ -449,15 +562,19 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       const nextYearMonth = allYearMonths[currentIndex + 1];
       const [nextYear, nextMonth] = nextYearMonth.split('-').map(Number);
       
+      debugLog(`Navigating to previous month: ${nextYearMonth}`);
       return scrollToYearMonth(nextYear, nextMonth, gridRef);
     }
     
+    debugLog('No previous month available');
     return false;
-  }, [currentYearMonth, dateIndex.yearMonthToIndex, scrollToYearMonth]);
+  }, [currentYearMonth, dateIndex.yearMonthToIndex, scrollToYearMonth, debugLog]);
 
   // MODIFICATION: Naviguer au mois précédent chronologiquement (plus ancien)
   const navigateToNextMonth = useCallback((gridRef: React.RefObject<any>) => {
     if (!currentYearMonth || !gridRef.current) return false;
+    
+    debugLog(`navigateToNextMonth called, current=${currentYearMonth}`);
     
     // Obtenir tous les yearMonth disponibles triés chronologiquement (du plus récent au plus ancien)
     const allYearMonths = Array.from(dateIndex.yearMonthToIndex.keys()).sort((a, b) => b.localeCompare(a));
@@ -470,11 +587,13 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       const previousYearMonth = allYearMonths[currentIndex - 1];
       const [prevYear, prevMonth] = previousYearMonth.split('-').map(Number);
       
+      debugLog(`Navigating to next month: ${previousYearMonth}`);
       return scrollToYearMonth(prevYear, prevMonth, gridRef);
     }
     
+    debugLog('No next month available');
     return false;
-  }, [currentYearMonth, dateIndex.yearMonthToIndex, scrollToYearMonth]);
+  }, [currentYearMonth, dateIndex.yearMonthToIndex, scrollToYearMonth, debugLog]);
 
   const getDateForId = useCallback((id: string): string | undefined => {
     return dateIndex.idToDate.get(id);
