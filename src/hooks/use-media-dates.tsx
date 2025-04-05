@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { MediaListResponse, GalleryItem } from '@/types/gallery';
 import { throttle } from 'lodash';
@@ -28,6 +29,12 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
   const [currentYearMonthLabel, setCurrentYearMonthLabel] = useState<string | null>(null);
   const lastScrollPositionRef = useRef<number>(0);
   const throttledUpdateRef = useRef<any>(null);
+  const gridColumnsRef = useRef<number>(columnsCount);
+
+  // Mettre à jour la référence du nombre de colonnes lorsqu'il change
+  useEffect(() => {
+    gridColumnsRef.current = columnsCount;
+  }, [columnsCount]);
 
   // Construire les index à partir des données reçues
   const dateIndex = useMemo(() => {
@@ -98,15 +105,17 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     };
   }, [mediaListResponse]);
 
-  // Initialiser currentYearMonth avec le premier mois disponible
+  // Initialiser currentYearMonth avec le mois le plus récent disponible
   useEffect(() => {
     // Si currentYearMonth n'est pas défini et que nous avons des années disponibles
     if (!currentYearMonth && dateIndex.years.length > 0) {
       const mostRecentYear = dateIndex.years[0]; // Les années sont triées par ordre décroissant
-      const firstAvailableMonth = dateIndex.monthsByYear.get(mostRecentYear)?.[0];
+      const monthsForYear = dateIndex.monthsByYear.get(mostRecentYear);
       
-      if (firstAvailableMonth) {
-        const initialYearMonth = `${mostRecentYear}-${firstAvailableMonth.toString().padStart(2, '0')}`;
+      if (monthsForYear && monthsForYear.length > 0) {
+        // CORRECTION: Prendre le mois le plus récent (dernier du tableau) et non le premier
+        const mostRecentMonth = monthsForYear[monthsForYear.length - 1]; 
+        const initialYearMonth = `${mostRecentYear}-${mostRecentMonth.toString().padStart(2, '0')}`;
         setCurrentYearMonth(initialYearMonth);
         setCurrentYearMonthLabel(formatMonthYearLabel(initialYearMonth));
       }
@@ -163,12 +172,12 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       // Vérifier si nous sommes au début d'une ligne (dans une grille virtuelle)
       // Si nous ne sommes pas au début d'une ligne, ajouter des éléments vides pour compléter la ligne
       // Utiliser le paramètre columnsCount au lieu de la valeur codée en dur
-      const isStartOfRow = items.length % columnsCount === 0;
+      const isStartOfRow = items.length % gridColumnsRef.current === 0;
       
       if (!isStartOfRow) {
         // Calculer combien d'éléments vides nous devons ajouter pour atteindre le début de la ligne suivante
         // Utiliser columnsCount au lieu de la valeur codée en dur
-        const itemsToAdd = columnsCount - (items.length % columnsCount);
+        const itemsToAdd = gridColumnsRef.current - (items.length % gridColumnsRef.current);
         for (let i = 0; i < itemsToAdd; i++) {
           // Ajouter un élément vide de type média avec un ID spécial
           items.push({
@@ -205,7 +214,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     }
 
     return items;
-  }, [mediaListResponse, columnsCount]);
+  }, [mediaListResponse, gridColumnsRef.current]); // Ajout de gridColumnsRef.current comme dépendance
 
   // Créer un index optimisé des séparateurs pour une recherche efficace
   const sortedSeparatorPositions = useMemo(() => {
@@ -339,49 +348,43 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     }
   }, []);
 
-  // Nouvelle fonction: naviguer au mois précédent
+  // MODIFICATION: Naviguer au mois suivant chronologiquement (plus récent)
   const navigateToPreviousMonth = useCallback((gridRef: React.RefObject<any>) => {
     if (!currentYearMonth || !gridRef.current) return false;
     
-    // Récupérer l'année et le mois actuels
-    const [currentYear, currentMonth] = currentYearMonth.split('-').map(Number);
-    
-    // Obtenir tous les yearMonth disponibles triés chronologiquement (du plus ancien au plus récent)
-    const allYearMonths = Array.from(dateIndex.yearMonthToIndex.keys()).sort();
-    
-    // Trouver l'index de l'année-mois actuel
-    const currentIndex = allYearMonths.indexOf(currentYearMonth);
-    
-    if (currentIndex > 0) {
-      // Il y a un mois précédent disponible
-      const previousYearMonth = allYearMonths[currentIndex - 1];
-      const [prevYear, prevMonth] = previousYearMonth.split('-').map(Number);
-      
-      return scrollToYearMonth(prevYear, prevMonth, gridRef);
-    }
-    
-    return false;
-  }, [currentYearMonth, dateIndex.yearMonthToIndex, scrollToYearMonth]);
-
-  // Nouvelle fonction: naviguer au mois suivant
-  const navigateToNextMonth = useCallback((gridRef: React.RefObject<any>) => {
-    if (!currentYearMonth || !gridRef.current) return false;
-    
-    // Récupérer l'année et le mois actuels
-    const [currentYear, currentMonth] = currentYearMonth.split('-').map(Number);
-    
-    // Obtenir tous les yearMonth disponibles triés chronologiquement (du plus ancien au plus récent)
-    const allYearMonths = Array.from(dateIndex.yearMonthToIndex.keys()).sort();
+    // Obtenir tous les yearMonth disponibles triés chronologiquement (du plus récent au plus ancien)
+    const allYearMonths = Array.from(dateIndex.yearMonthToIndex.keys()).sort((a, b) => b.localeCompare(a));
     
     // Trouver l'index de l'année-mois actuel
     const currentIndex = allYearMonths.indexOf(currentYearMonth);
     
     if (currentIndex < allYearMonths.length - 1) {
-      // Il y a un mois suivant disponible
+      // CORRECTION: Aller au mois plus ancien (next dans l'ordre de tri mais previous chronologiquement)
       const nextYearMonth = allYearMonths[currentIndex + 1];
       const [nextYear, nextMonth] = nextYearMonth.split('-').map(Number);
       
       return scrollToYearMonth(nextYear, nextMonth, gridRef);
+    }
+    
+    return false;
+  }, [currentYearMonth, dateIndex.yearMonthToIndex, scrollToYearMonth]);
+
+  // MODIFICATION: Naviguer au mois précédent chronologiquement (plus ancien)
+  const navigateToNextMonth = useCallback((gridRef: React.RefObject<any>) => {
+    if (!currentYearMonth || !gridRef.current) return false;
+    
+    // Obtenir tous les yearMonth disponibles triés chronologiquement (du plus récent au plus ancien)
+    const allYearMonths = Array.from(dateIndex.yearMonthToIndex.keys()).sort((a, b) => b.localeCompare(a));
+    
+    // Trouver l'index de l'année-mois actuel
+    const currentIndex = allYearMonths.indexOf(currentYearMonth);
+    
+    if (currentIndex > 0) {
+      // CORRECTION: Aller au mois plus récent (previous dans l'ordre de tri mais next chronologiquement)
+      const previousYearMonth = allYearMonths[currentIndex - 1];
+      const [prevYear, prevMonth] = previousYearMonth.split('-').map(Number);
+      
+      return scrollToYearMonth(prevYear, prevMonth, gridRef);
     }
     
     return false;

@@ -65,14 +65,14 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
             <Button
               variant="outline"
               size="icon"
-              onClick={onNavigateToPreviousMonth}
+              onClick={onNavigateToNextMonth} // MODIFIÉ: Inversé avec onNavigateToPreviousMonth pour correspondre à l'ordre chronologique
               className="h-8 w-8"
             >
               <ArrowLeft size={isMobile ? 16 : 18} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>Mois précédent</p>
+            <p>Mois plus récent</p> {/* MODIFIÉ: Texte plus explicite */}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -83,14 +83,14 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
             <Button
               variant="outline"
               size="icon"
-              onClick={onNavigateToNextMonth}
+              onClick={onNavigateToPreviousMonth} // MODIFIÉ: Inversé avec onNavigateToNextMonth pour correspondre à l'ordre chronologique
               className="h-8 w-8"
             >
               <ArrowRight size={isMobile ? 16 : 18} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            <p>Mois suivant</p>
+            <p>Mois plus ancien</p> {/* MODIFIÉ: Texte plus explicite */}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

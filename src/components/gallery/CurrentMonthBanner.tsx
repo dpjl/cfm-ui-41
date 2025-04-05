@@ -22,20 +22,20 @@ const CurrentMonthBanner: React.FC<CurrentMonthBannerProps> = ({
     : 'bg-secondary/60 text-secondary-foreground border-secondary/30';
   
   // Classes de base pour le bandeau
-  const baseClasses = "backdrop-blur-sm font-medium shadow-sm";
+  const baseClasses = "backdrop-blur-sm font-medium shadow-sm z-50";
   
   // Classes responsives
   const sizeClasses = isMobile 
-    ? "text-xs py-0.5 px-2 top-1" 
-    : "text-sm py-1 px-3 top-2";
+    ? "text-xs py-0.5 px-2" 
+    : "text-sm py-1 px-3";
   
   return (
-    <div className="absolute z-40 w-full flex justify-center pointer-events-none">
+    <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentMonth}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 5 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className={`rounded-full ${baseClasses} ${sizeClasses} ${colorClass} border`}

@@ -58,6 +58,22 @@ const VirtualizedGalleryGrid = memo(({
   // Utiliser le gridRef externe s'il est fourni, sinon utiliser l'interne
   const effectiveGridRef = externalGridRef || internalGridRef;
   
+  // Utiliser un ref pour suivre le changement de columns
+  const prevColumnsRef = useRef(columnsCount);
+  
+  // Détecter les changements de columnsCount qui nécessitent un recalcul
+  useEffect(() => {
+    if (prevColumnsRef.current !== columnsCount) {
+      prevColumnsRef.current = columnsCount;
+      // Force refresh de la position actuelle
+      if (effectiveGridRef.current && scrollPositionRef.current > 0) {
+        setTimeout(() => {
+          updateCurrentYearMonthFromScroll(scrollPositionRef.current, effectiveGridRef);
+        }, 50);
+      }
+    }
+  }, [columnsCount]);
+  
   const { 
     dateIndex, 
     scrollToYearMonth, 
