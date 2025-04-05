@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { MediaListResponse, GalleryItem } from '@/types/gallery';
 import { throttle } from 'lodash';
@@ -261,9 +262,10 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     }
 
     return items;
-  }, [mediaListResponse, columnsCount]); // Correction: utiliser directement columnsCount au lieu de gridColumnsRef.current
+  }, [mediaListResponse, columnsCount]); // Utiliser directement columnsCount comme dépendance
 
   // Créer un index optimisé des séparateurs pour une recherche efficace
+  // MODIFICATION: ajout de columnsCount comme dépendance directe pour forcer la mise à jour
   const sortedSeparatorPositions = useMemo(() => {
     const positions: {index: number, yearMonth: string}[] = [];
     
@@ -275,7 +277,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     
     // Tri par index croissant
     return positions.sort((a, b) => a.index - b.index);
-  }, [enrichedGalleryItems]);
+  }, [enrichedGalleryItems, columnsCount]); // Ajout de columnsCount comme dépendance directe
 
   // Index pour accéder rapidement à un séparateur par yearMonth
   const separatorIndices = useMemo(() => {
