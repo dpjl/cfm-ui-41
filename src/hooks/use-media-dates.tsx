@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { MediaListResponse, GalleryItem } from '@/types/gallery';
 import { throttle } from 'lodash';
@@ -30,10 +29,46 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
   const lastScrollPositionRef = useRef<number>(0);
   const throttledUpdateRef = useRef<any>(null);
   const gridColumnsRef = useRef<number>(columnsCount);
+  
+  // Nouvel état pour désactiver temporairement les mises à jour basées sur le défilement
+  const isRepositioningRef = useRef<boolean>(false);
+  // Mémoriser le mois courant pour le repositionnement après changement de colonnes
+  const lastYearMonthRef = useRef<string | null>(null);
 
   // Mettre à jour la référence du nombre de colonnes lorsqu'il change
   useEffect(() => {
-    gridColumnsRef.current = columnsCount;
+    // Si le nombre de colonnes a changé et que nous avons un mois courant
+    if (gridColumnsRef.current !== columnsCount && currentYearMonth) {
+      // Sauvegarder le mois courant avant le changement
+      lastYearMonthRef.current = currentYearMonth;
+      
+      // Désactiver temporairement les mises à jour basées sur le défilement
+      isRepositioningRef.current = true;
+      
+      // Mettre à jour la référence des colonnes
+      gridColumnsRef.current = columnsCount;
+      
+      // Attendre que la grille soit reconstruite avant de restaurer la position
+      setTimeout(() => {
+        if (lastYearMonthRef.current) {
+          // Extraire année et mois
+          const [year, month] = lastYearMonthRef.current.split('-').map(Number);
+          
+          // Restaurer la position au même mois qu'avant le changement
+          if (!isNaN(year) && !isNaN(month)) {
+            scrollToYearMonth(year, month, null);
+            
+            // Réactiver les mises à jour basées sur le défilement après un court délai
+            setTimeout(() => {
+              isRepositioningRef.current = false;
+            }, 300);
+          }
+        }
+      }, 100);
+    } else {
+      // Si c'est la première initialisation, simplement mettre à jour la référence
+      gridColumnsRef.current = columnsCount;
+    }
   }, [columnsCount]);
 
   // Construire les index à partir des données reçues
@@ -107,13 +142,11 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
 
   // Initialiser currentYearMonth avec le mois le plus récent disponible
   useEffect(() => {
-    // Si currentYearMonth n'est pas défini et que nous avons des années disponibles
     if (!currentYearMonth && dateIndex.years.length > 0) {
       const mostRecentYear = dateIndex.years[0]; // Les années sont triées par ordre décroissant
       const monthsForYear = dateIndex.monthsByYear.get(mostRecentYear);
       
       if (monthsForYear && monthsForYear.length > 0) {
-        // CORRECTION: Prendre le mois le plus récent (dernier du tableau) et non le premier
         const mostRecentMonth = monthsForYear[monthsForYear.length - 1]; 
         const initialYearMonth = `${mostRecentYear}-${mostRecentMonth.toString().padStart(2, '0')}`;
         setCurrentYearMonth(initialYearMonth);
@@ -309,9 +342,16 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     }
   }, [getYearMonthFromScrollPosition, currentYearMonth]);
 
-  // Fonctions pour la navigation par date
-  const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any>) => {
+  // Fonctions pour la navigation par date - MISE À JOUR avec synchronisation directe
+  const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
     const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
+    
+    // Mise à jour directe des états pour éviter le décalage
+    setCurrentYearMonth(yearMonth);
+    setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
+    
+    // Si aucun gridRef n'est fourni, nous ne faisons que mettre à jour les états
+    if (!gridRef) return true;
     
     // Essayer d'abord avec l'index du séparateur (si disponible)
     const separatorIndex = separatorIndices.get(yearMonth);
@@ -321,8 +361,6 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
         align: 'start',
         rowIndex
       });
-      setCurrentYearMonth(yearMonth);
-      setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
       return true;
     }
     
@@ -333,8 +371,6 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
         align: 'start',
         rowIndex: Math.floor(mediaIndex / gridRef.current.props.columnCount)
       });
-      setCurrentYearMonth(yearMonth);
-      setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
       return true;
     }
     
@@ -343,6 +379,9 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
 
   // Fonction pour mettre à jour le mois courant lors d'un défilement
   const updateCurrentYearMonthFromScroll = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
+    // Ne pas mettre à jour si nous sommes en train de repositionner
+    if (isRepositioningRef.current) return;
+    
     if (throttledUpdateRef.current) {
       throttledUpdateRef.current(scrollTop, gridRef);
     }

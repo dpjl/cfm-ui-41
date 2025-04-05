@@ -31,6 +31,7 @@ const MonthYearSeparator: React.FC<MonthYearSeparatorProps> = ({ label }) => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
+      key={`${month}-${year}`} // Ajouter une clé spécifique pour forcer l'animation à chaque changement
     >
       <div className="relative flex flex-col items-center justify-center bg-muted/20 backdrop-blur-sm rounded-lg sm:rounded-xl p-1 sm:p-2 w-[95%] h-[95%] shadow-subtle border border-muted/30 overflow-hidden group">
         {/* Fond du calendrier avec dégradé subtil */}
