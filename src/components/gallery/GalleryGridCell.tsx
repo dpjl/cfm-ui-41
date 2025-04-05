@@ -40,8 +40,8 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
   if (item.type === 'separator') {
     // Only render separators at the beginning of rows (columnIndex === 0)
     if (columnIndex === 0) {
-      // Calculate the style for this separator (a standard cell)
-      const separatorStyle = data.calculateCellStyle(style, columnIndex, false);
+      // Calculate the style for this separator - make it span the entire row
+      const separatorStyle = data.calculateCellStyle(style, columnIndex, true);
       
       // On small screens, adjust the height for better readability
       const finalStyle = isSmallScreen 
@@ -56,6 +56,12 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
     }
     // Skip rendering separators if they're not at the beginning of a row
     return null;
+  }
+  
+  // For empty cells, render a minimal placeholder without any content or API calls
+  if (item.id.startsWith('empty-')) {
+    const emptyStyle = data.calculateCellStyle(style, columnIndex, false);
+    return <div style={emptyStyle} className="empty-cell" aria-hidden="true" />;
   }
   
   // For media type, render the media item

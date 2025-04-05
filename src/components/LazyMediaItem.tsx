@@ -83,9 +83,19 @@ const LazyMediaItem = memo(({
     return <MediaPlaceholder ref={setCombinedRef} />;
   }
   
-  // Déterminer si c'est une vidéo basé sur l'ID (implémentation simplifiée)
-  // Note: Nous ne chargeons plus les infos détaillées, donc nous nous basons sur l'ID
-  const isVideo = id.includes('vid-');
+  // Vérifier si c'est un élément vide (pour les séparateurs)
+  if (id.startsWith('empty-')) {
+    return (
+      <div 
+        ref={setCombinedRef}
+        className="empty-cell"
+        aria-hidden="true"
+      />
+    );
+  }
+  
+  // Déterminer si c'est une vidéo basé sur l'ID avec le nouveau préfixe 'v'
+  const isVideo = id.startsWith('v');
   
   return (
     <div

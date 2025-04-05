@@ -179,12 +179,12 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
         // Utiliser columnsCount au lieu de la valeur codée en dur
         const itemsToAdd = gridColumnsRef.current - (items.length % gridColumnsRef.current);
         for (let i = 0; i < itemsToAdd; i++) {
-          // Ajouter un élément vide de type média avec un ID spécial
+          // Ajouter un élément vide explicite qui ne déclenchera pas de requêtes
           items.push({
             type: 'media',
-            id: `empty-${actualIndex}`,
+            id: `empty-${yearMonth}-${i}`,  // Amélioration: ID plus spécifique pour debug
             index: -1,          // Index original invalide
-            actualIndex         // Index réel tenant compte des séparateurs
+            actualIndex: actualIndex         // Index réel tenant compte des séparateurs
           });
           actualIndex++;
         }

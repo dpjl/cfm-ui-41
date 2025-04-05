@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import VirtualizedGalleryGrid from './VirtualizedGalleryGrid';
@@ -60,7 +59,6 @@ const Gallery: React.FC<GalleryProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const mediaIds = mediaResponse?.mediaIds || [];
   
-  // Utiliser notre nouveau hook pour le chargement paresseux des infos
   const { mediaInfoMap } = useLazyMediaInfo(position);
   
   const selection = useGallerySelection({
@@ -79,11 +77,9 @@ const Gallery: React.FC<GalleryProps> = ({
     position
   );
 
-  // Références aux fonctions de navigation mensuelle (définies par VirtualizedGalleryGrid)
   const navigateToPreviousMonthRef = useRef<() => boolean>(() => false);
   const navigateToNextMonthRef = useRef<() => boolean>(() => false);
   
-  // Gestionnaires de navigation mensuelle
   const handleNavigatePrevMonth = useCallback(() => {
     if (navigateToPreviousMonthRef.current) {
       return navigateToPreviousMonthRef.current();
@@ -98,7 +94,6 @@ const Gallery: React.FC<GalleryProps> = ({
     return false;
   }, []);
   
-  // Fonction pour recevoir les références aux fonctions de navigation depuis VirtualizedGalleryGrid
   const handleSetNavigationFunctions = useCallback((
     prevFn: () => boolean, 
     nextFn: () => boolean
@@ -131,16 +126,13 @@ const Gallery: React.FC<GalleryProps> = ({
     );
   }
 
-  // Déterminer si c'est une vidéo basé sur l'ID simplifié
   const isVideoPreview = (id: string): boolean => {
-    // D'abord vérifier si nous avons les infos détaillées
     const info = mediaInfoMap.get(id);
     if (info) {
       const fileName = info.alt?.toLowerCase() || '';
       return fileName.endsWith('.mp4') || fileName.endsWith('.mov');
     }
-    // Fallback sur l'ID
-    return id.includes('vid-');
+    return id.startsWith('v');
   };
   
   return (

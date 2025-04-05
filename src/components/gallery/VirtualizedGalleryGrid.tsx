@@ -120,13 +120,21 @@ const VirtualizedGalleryGrid = memo(({
     columnIndex: number,
     isSeparator: boolean
   ): React.CSSProperties => {
-    return {
+    // Base style adjustments
+    const baseStyle = {
       ...originalStyle,
       width: `${parseFloat(originalStyle.width as string) - gap}px`,
       height: `${parseFloat(originalStyle.height as string) - gap}px`,
       paddingRight: gap,
       paddingBottom: gap,
     };
+    
+    // Pour les séparateurs, étendre sur toute la largeur si nécessaire
+    if (isSeparator) {
+      return baseStyle;
+    }
+    
+    return baseStyle;
   }, [gap]);
   
   // Gestionnaire de défilement pour mettre à jour le mois courant
