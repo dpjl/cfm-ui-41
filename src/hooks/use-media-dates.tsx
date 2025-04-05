@@ -143,7 +143,147 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     return result;
   }, [mediaListResponse, debugLog]);
 
-  // IMPORTANT: Define scrollToYearMonth function before it's used in useEffect or other functions
+  // Créer une structure de données enrichie avec des séparateurs de mois/année
+  const enrichedGalleryItems = useMemo(() => {
+    debugLog(`Calculating enrichedGalleryItems with columnsCount: ${columnsCount}`);
+    
+    if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
+      return [];
+    }
+
+    const { mediaIds, mediaDates } = mediaListResponse;
+    const items: GalleryItem[] = [];
+    let actualIndex = 0; // Index réel dans la liste finale
+
+    // Fonction pour formatter le label du mois/année (ex: "Janvier 2023")
+    const formatMonthYearLabel = (yearMonth: string): string => {
+      const [year, month] = yearMonth.split('-').map(Number);
+      const monthNames = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      ];
+      return `${monthNames[month - 1]} ${year}`;
+    };
+
+    // Premier passage : collecte des médias groupés par mois/année
+    const mediaByYearMonth = new Map<string, { id: string, index: number, date: string }[]>();
+    
+    for (let i = 0; i < mediaIds.length; i++) {
+      const id = mediaIds[i];
+      const date = mediaDates[i];
+      
+      if (date) {
+        const [year, month] = date.split('-').map(Number);
+        if (!isNaN(year) && !isNaN(month)) {
+          const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
+          
+          if (!mediaByYearMonth.has(yearMonth)) {
+            mediaByYearMonth.set(yearMonth, []);
+          }
+          
+          mediaByYearMonth.get(yearMonth)!.push({ id, index: i, date });
+        }
+      }
+    }
+    
+    // Deuxième passage : création de la liste finale avec séparateurs
+    // Tri des year-months dans l'ordre chronologique inverse
+    const sortedYearMonths = Array.from(mediaByYearMonth.keys()).sort((a, b) => b.localeCompare(a));
+    
+    debugLog(`Found ${sortedYearMonths.length} year-months for separator creation`);
+    
+    // Pour chaque mois/année
+    for (const yearMonth of sortedYearMonths) {
+      // Vérifier si nous sommes au début d'une ligne (dans une grille virtuelle)
+      // Si nous ne sommes pas au début d'une ligne, ajouter des éléments vides pour compléter la ligne
+      // Utiliser le paramètre columnsCount au lieu de la valeur codée en dur
+      const isStartOfRow = items.length % columnsCount === 0;
+      
+      if (!isStartOfRow) {
+        // Calculer combien d'éléments vides nous devons ajouter pour atteindre le début de la ligne suivante
+        // Utiliser columnsCount au lieu de la valeur codée en dur
+        const itemsToAdd = columnsCount - (items.length % columnsCount);
+        debugLog(`Adding ${itemsToAdd} empty items to align separator for ${yearMonth}`);
+        for (let i = 0; i < itemsToAdd; i++) {
+          // Ajouter un élément vide explicite qui ne déclenchera pas de requêtes
+          items.push({
+            type: 'media',
+            id: `empty-${yearMonth}-${i}`,  // Amélioration: ID plus spécifique pour debug
+            index: -1,          // Index original invalide
+            actualIndex: actualIndex         // Index réel tenant compte des séparateurs
+          });
+          actualIndex++;
+        }
+      }
+      
+      // Maintenant nous sommes sûrs d'être au début d'une ligne
+      // Ajouter un séparateur pour ce mois/année
+      items.push({
+        type: 'separator',
+        yearMonth,
+        label: formatMonthYearLabel(yearMonth),
+        index: actualIndex
+      });
+      actualIndex++;
+      
+      // Ajouter tous les médias de ce mois/année
+      const mediaItems = mediaByYearMonth.get(yearMonth)!;
+      for (const { id, index } of mediaItems) {
+        items.push({
+          type: 'media',
+          id,
+          index,          // Index original dans mediaIds
+          actualIndex     // Index réel tenant compte des séparateurs
+        });
+        actualIndex++;
+      }
+    }
+
+    debugLog(`Created ${items.length} enriched gallery items (including separators and empty cells)`);
+    
+    return items;
+  }, [mediaListResponse, columnsCount, debugLog]);
+
+  // Créer un index optimisé des séparateurs pour une recherche efficace
+  const sortedSeparatorPositions = useMemo(() => {
+    const positions: {index: number, yearMonth: string}[] = [];
+    
+    enrichedGalleryItems.forEach((item) => {
+      if (item.type === 'separator') {
+        positions.push({index: item.index, yearMonth: item.yearMonth});
+      }
+    });
+    
+    // Tri par index croissant
+    const sorted = positions.sort((a, b) => a.index - b.index);
+    
+    debugLog(`Created sortedSeparatorPositions with ${sorted.length} separators`);
+    // Log quelques exemples de positions sans afficher toute la liste
+    if (sorted.length > 0) {
+      debugLog(`First separator: index=${sorted[0].index}, yearMonth=${sorted[0].yearMonth}`);
+      if (sorted.length > 1) {
+        debugLog(`Last separator: index=${sorted[sorted.length-1].index}, yearMonth=${sorted[sorted.length-1].yearMonth}`);
+      }
+    }
+    
+    return sorted;
+  }, [enrichedGalleryItems, debugLog]);
+
+  // Index pour accéder rapidement à un séparateur par yearMonth
+  const separatorIndices = useMemo(() => {
+    const indices = new Map<string, number>();
+    enrichedGalleryItems.forEach((item, index) => {
+      if (item.type === 'separator') {
+        indices.set(item.yearMonth, index);
+      }
+    });
+    
+    debugLog(`Created separatorIndices map with ${indices.size} entries`);
+    
+    return indices;
+  }, [enrichedGalleryItems, debugLog]);
+
+  // IMPORTANT: Fonction scrollToYearMonth définie APRÈS la création des variables dont elle dépend
   const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
     const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
     
@@ -268,146 +408,6 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       gridColumnsRef.current = columnsCount;
     }
   }, [columnsCount, currentYearMonth, debugLog, scrollToYearMonth]);
-
-  // Créer une structure de données enrichie avec des séparateurs de mois/année
-  const enrichedGalleryItems = useMemo(() => {
-    debugLog(`Calculating enrichedGalleryItems with columnsCount: ${columnsCount}`);
-    
-    if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
-      return [];
-    }
-
-    const { mediaIds, mediaDates } = mediaListResponse;
-    const items: GalleryItem[] = [];
-    let actualIndex = 0; // Index réel dans la liste finale
-
-    // Fonction pour formatter le label du mois/année (ex: "Janvier 2023")
-    const formatMonthYearLabel = (yearMonth: string): string => {
-      const [year, month] = yearMonth.split('-').map(Number);
-      const monthNames = [
-        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-      ];
-      return `${monthNames[month - 1]} ${year}`;
-    };
-
-    // Premier passage : collecte des médias groupés par mois/année
-    const mediaByYearMonth = new Map<string, { id: string, index: number, date: string }[]>();
-    
-    for (let i = 0; i < mediaIds.length; i++) {
-      const id = mediaIds[i];
-      const date = mediaDates[i];
-      
-      if (date) {
-        const [year, month] = date.split('-').map(Number);
-        if (!isNaN(year) && !isNaN(month)) {
-          const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
-          
-          if (!mediaByYearMonth.has(yearMonth)) {
-            mediaByYearMonth.set(yearMonth, []);
-          }
-          
-          mediaByYearMonth.get(yearMonth)!.push({ id, index: i, date });
-        }
-      }
-    }
-    
-    // Deuxième passage : création de la liste finale avec séparateurs
-    // Tri des year-months dans l'ordre chronologique inverse
-    const sortedYearMonths = Array.from(mediaByYearMonth.keys()).sort((a, b) => b.localeCompare(a));
-    
-    debugLog(`Found ${sortedYearMonths.length} year-months for separator creation`);
-    
-    // Pour chaque mois/année
-    for (const yearMonth of sortedYearMonths) {
-      // Vérifier si nous sommes au début d'une ligne (dans une grille virtuelle)
-      // Si nous ne sommes pas au début d'une ligne, ajouter des éléments vides pour compléter la ligne
-      // Utiliser le paramètre columnsCount au lieu de la valeur codée en dur
-      const isStartOfRow = items.length % columnsCount === 0;
-      
-      if (!isStartOfRow) {
-        // Calculer combien d'éléments vides nous devons ajouter pour atteindre le début de la ligne suivante
-        // Utiliser columnsCount au lieu de la valeur codée en dur
-        const itemsToAdd = columnsCount - (items.length % columnsCount);
-        debugLog(`Adding ${itemsToAdd} empty items to align separator for ${yearMonth}`);
-        for (let i = 0; i < itemsToAdd; i++) {
-          // Ajouter un élément vide explicite qui ne déclenchera pas de requêtes
-          items.push({
-            type: 'media',
-            id: `empty-${yearMonth}-${i}`,  // Amélioration: ID plus spécifique pour debug
-            index: -1,          // Index original invalide
-            actualIndex: actualIndex         // Index réel tenant compte des séparateurs
-          });
-          actualIndex++;
-        }
-      }
-      
-      // Maintenant nous sommes sûrs d'être au début d'une ligne
-      // Ajouter un séparateur pour ce mois/année
-      items.push({
-        type: 'separator',
-        yearMonth,
-        label: formatMonthYearLabel(yearMonth),
-        index: actualIndex
-      });
-      actualIndex++;
-      
-      // Ajouter tous les médias de ce mois/année
-      const mediaItems = mediaByYearMonth.get(yearMonth)!;
-      for (const { id, index } of mediaItems) {
-        items.push({
-          type: 'media',
-          id,
-          index,          // Index original dans mediaIds
-          actualIndex     // Index réel tenant compte des séparateurs
-        });
-        actualIndex++;
-      }
-    }
-
-    debugLog(`Created ${items.length} enriched gallery items (including separators and empty cells)`);
-    
-    return items;
-  }, [mediaListResponse, columnsCount, debugLog]); // Correction: utiliser directement columnsCount au lieu de gridColumnsRef.current
-
-  // Créer un index optimisé des séparateurs pour une recherche efficace
-  const sortedSeparatorPositions = useMemo(() => {
-    const positions: {index: number, yearMonth: string}[] = [];
-    
-    enrichedGalleryItems.forEach((item) => {
-      if (item.type === 'separator') {
-        positions.push({index: item.index, yearMonth: item.yearMonth});
-      }
-    });
-    
-    // Tri par index croissant
-    const sorted = positions.sort((a, b) => a.index - b.index);
-    
-    debugLog(`Created sortedSeparatorPositions with ${sorted.length} separators`);
-    // Log quelques exemples de positions sans afficher toute la liste
-    if (sorted.length > 0) {
-      debugLog(`First separator: index=${sorted[0].index}, yearMonth=${sorted[0].yearMonth}`);
-      if (sorted.length > 1) {
-        debugLog(`Last separator: index=${sorted[sorted.length-1].index}, yearMonth=${sorted[sorted.length-1].yearMonth}`);
-      }
-    }
-    
-    return sorted;
-  }, [enrichedGalleryItems, debugLog]);
-
-  // Index pour accéder rapidement à un séparateur par yearMonth
-  const separatorIndices = useMemo(() => {
-    const indices = new Map<string, number>();
-    enrichedGalleryItems.forEach((item, index) => {
-      if (item.type === 'separator') {
-        indices.set(item.yearMonth, index);
-      }
-    });
-    
-    debugLog(`Created separatorIndices map with ${indices.size} entries`);
-    
-    return indices;
-  }, [enrichedGalleryItems, debugLog]);
 
   // Nouvelle fonction optimisée: calculer le mois-année à partir d'une position de défilement
   // Ajout d'une zone de tolérance pour la détection du mois courant
