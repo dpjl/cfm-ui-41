@@ -14,6 +14,7 @@ import {
 } from '@/utils/grid-utils';
 import { useMonthNavigation } from '@/hooks/use-month-navigation';
 import CurrentMonthBanner from './CurrentMonthBanner';
+import { useViewportHeight } from '@/hooks/use-viewport-height';
 
 interface VirtualizedGalleryGridProps {
   mediaResponse: MediaListResponse;
@@ -57,6 +58,9 @@ const VirtualizedGalleryGrid = memo(({
   
   // Utiliser un ref pour suivre le changement de columns
   const prevColumnsRef = useRef(columnsCount);
+  
+  // Utiliser notre nouveau hook pour obtenir la hauteur ajustée du viewport
+  const { adjustedHeight, bottomSafeArea } = useViewportHeight();
   
   // Détecter les changements de columnsCount qui nécessitent un recalcul
   useEffect(() => {
@@ -180,6 +184,9 @@ const VirtualizedGalleryGrid = memo(({
       
       <AutoSizer key={`gallery-grid-${gridKey}`}>
         {({ height, width }) => {
+          // Ajuster la hauteur pour les appareils mobiles en prenant en compte les zones de sécurité
+          const adjustedGridHeight = Math.min(height, adjustedHeight);
+          
           const { 
             itemWidth, 
             itemHeight
@@ -192,7 +199,7 @@ const VirtualizedGalleryGrid = memo(({
               ref={effectiveGridRef}
               columnCount={columnsCount}
               columnWidth={columnWidth}
-              height={height}
+              height={adjustedGridHeight}
               rowCount={rowCount}
               rowHeight={itemHeight + gap}
               width={width}

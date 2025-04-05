@@ -23,3 +23,22 @@
 .mobile-view-transition {
   transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
+
+/* Variables pour la hauteur du viewport mobile */
+:root {
+  --vh: 1vh;
+  --sat-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Classes utilitaires pour les hauteurs de viewport ajustées */
+.h-viewport {
+  height: calc(var(--vh, 1vh) * 100);
+}
+
+.max-h-viewport {
+  max-height: calc(var(--vh, 1vh) * 100);
+}
+
+.min-h-viewport {
+  min-height: calc(var(--vh, 1vh) * 100);
+}
