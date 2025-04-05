@@ -12,6 +12,7 @@
 @import './components/transitions.css';
 @import './components/responsive.css';
 @import './components/scrollbars.css';
+@import './components/calendar-separator.css';
 
 /* Utilities */
 @import './utilities.css';

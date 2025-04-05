@@ -1,4 +1,3 @@
-
 /* Mobile optimization styles */
 @layer components {
   /* Gallery specific responsive styles */
@@ -59,10 +58,7 @@
       touch-action: manipulation;
     }
     
-    /* Month-year separator optimizations for mobile */
-    .separator-cell {
-      @apply text-xs;
-    }
+    /* Month-year separator optimizations removed to avoid conflicts */
   }
   
   /* Mobile view mode switcher */

@@ -1,0 +1,90 @@
+
+/* Calendar Separator Styles
+   Dedicated styles for the month/year separator with a calendar page design
+*/
+
+/* Wrapper for the entire separator with proper spacing */
+.calendar-separator-wrapper {
+  @apply flex items-center justify-center w-full h-full p-1 sm:p-2;
+}
+
+/* Main container with glass effect and border */
+.calendar-separator-container {
+  @apply relative flex flex-col items-center justify-center 
+         bg-muted/20 backdrop-blur-sm 
+         rounded-lg sm:rounded-xl 
+         p-1 sm:p-2 
+         w-[95%] h-[95%] 
+         shadow-subtle border border-muted/30 
+         overflow-hidden group;
+}
+
+/* Background gradient effect */
+.calendar-separator-gradient {
+  @apply absolute inset-0 
+         bg-gradient-to-b from-sky-500/10 to-transparent 
+         opacity-50 group-hover:opacity-70 
+         transition-opacity;
+}
+
+/* Calendar header bar */
+.calendar-separator-header {
+  @apply absolute top-0 left-0 right-0 h-[30%] 
+         bg-sky-500/30 dark:bg-sky-500/20 group-hover:bg-sky-500/40 
+         transition-colors rounded-t-lg;
+}
+
+/* Centered calendar icon */
+.calendar-separator-icon {
+  @apply absolute opacity-15 
+         top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+}
+
+.calendar-separator-icon svg {
+  @apply w-8 h-8 md:w-10 md:h-10;
+}
+
+/* Text content container */
+.calendar-separator-content {
+  @apply z-10 flex flex-col items-center justify-center text-center;
+}
+
+/* Month text style - adaptive size */
+.calendar-separator-month {
+  @apply text-[0.6rem] xs:text-xs sm:text-sm 
+         font-medium text-foreground/80;
+}
+
+/* Year text style - larger and bolder */
+.calendar-separator-year {
+  @apply text-sm xs:text-base sm:text-lg 
+         font-bold text-foreground;
+}
+
+/* Shine effect on hover */
+.calendar-separator-shine {
+  @apply absolute inset-0 
+         bg-gradient-to-r from-transparent via-white/10 to-transparent 
+         opacity-0 group-hover:opacity-100 
+         translate-x-[-100%] group-hover:translate-x-[100%] 
+         transition-all duration-1000 ease-in-out;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .calendar-separator-container {
+    @apply rounded-md p-1;
+  }
+  
+  .calendar-separator-month {
+    @apply text-[0.6rem];
+  }
+  
+  .calendar-separator-year {
+    @apply text-xs font-semibold;
+  }
+  
+  .calendar-separator-icon svg {
+    @apply w-6 h-6;
+  }
+}
