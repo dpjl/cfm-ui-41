@@ -208,6 +208,6 @@ const Gallery: React.FC<GalleryProps> = ({
       )}
     </div>
   );
-});
+};
 
 export default Gallery;
