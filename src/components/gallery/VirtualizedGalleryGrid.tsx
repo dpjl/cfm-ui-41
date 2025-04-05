@@ -46,30 +46,11 @@ const VirtualizedGalleryGrid = memo(({
 }: VirtualizedGalleryGridProps) => {
   const mediaIds = mediaResponse?.mediaIds || [];
   
-  // Log enabler for debugging
-  const logsEnabledRef = useRef<boolean>(true);
-  
-  // Debug log helper
-  const debugLog = useCallback((message: string, data?: any) => {
-    if (logsEnabledRef.current) {
-      if (data) {
-        console.log(`[VirtualizedGalleryGrid:${position}] ${message}`, data);
-      } else {
-        console.log(`[VirtualizedGalleryGrid:${position}] ${message}`);
-      }
-    }
-  }, [position]);
-  
   const {
     gridRef: internalGridRef,
     gridKey,
     scrollPositionRef
   } = useGalleryGrid();
-  
-  // Log the grid references
-  useEffect(() => {
-    debugLog(`Grid references - external: ${externalGridRef ? 'exists' : 'null'}, internal: ${internalGridRef ? 'exists' : 'null'}`);
-  }, [externalGridRef, internalGridRef, debugLog]);
   
   // Utiliser le gridRef externe s'il est fourni, sinon utiliser l'interne
   const effectiveGridRef = externalGridRef || internalGridRef;
@@ -87,37 +68,21 @@ const VirtualizedGalleryGrid = memo(({
   
   // Passer la référence de la grille au hook useMediaDates
   useEffect(() => {
-    debugLog(`Setting external grid ref, ref exists: ${effectiveGridRef ? 'yes' : 'no'}`);
-    
     if (setExternalGridRef) {
       setExternalGridRef(effectiveGridRef);
     }
-    
-    // Log grid properties if available
-    if (effectiveGridRef?.current) {
-      const gridProps = {
-        columnCount: effectiveGridRef.current.props?.columnCount,
-        rowCount: effectiveGridRef.current.props?.rowCount,
-        rowHeight: effectiveGridRef.current.props?.rowHeight,
-        width: effectiveGridRef.current.props?.width,
-        height: effectiveGridRef.current.props?.height
-      };
-      debugLog('Current grid properties:', gridProps);
-    }
-  }, [effectiveGridRef, setExternalGridRef, debugLog]);
+  }, [effectiveGridRef, setExternalGridRef]);
   
   useGalleryMediaTracking(mediaResponse, effectiveGridRef);
   
   // Handlers pour la navigation mensuelle
   const handlePrevMonth = useCallback(() => {
-    debugLog('handlePrevMonth called');
     return navigateToPreviousMonth(effectiveGridRef);
-  }, [navigateToPreviousMonth, effectiveGridRef, debugLog]);
+  }, [navigateToPreviousMonth, effectiveGridRef]);
   
   const handleNextMonth = useCallback(() => {
-    debugLog('handleNextMonth called');
     return navigateToNextMonth(effectiveGridRef);
-  }, [navigateToNextMonth, effectiveGridRef, debugLog]);
+  }, [navigateToNextMonth, effectiveGridRef]);
   
   // Utiliser le hook de navigation mensuelle pour les raccourcis clavier
   useMonthNavigation({
@@ -128,23 +93,19 @@ const VirtualizedGalleryGrid = memo(({
   // Passer les fonctions de navigation au composant parent si nécessaire
   useEffect(() => {
     if (onSetNavigationFunctions) {
-      debugLog('Setting navigation functions in parent');
       onSetNavigationFunctions(handlePrevMonth, handleNextMonth);
     }
-  }, [handlePrevMonth, handleNextMonth, onSetNavigationFunctions, debugLog]);
+  }, [handlePrevMonth, handleNextMonth, onSetNavigationFunctions]);
   
   const scrollbarWidth = useMemo(() => getScrollbarWidth(), []);
   
   const handleSelectYearMonth = useCallback((year: number, month: number) => {
-    debugLog(`handleSelectYearMonth called: ${year}-${month}`);
     scrollToYearMonth(year, month, effectiveGridRef);
-  }, [scrollToYearMonth, effectiveGridRef, debugLog]);
+  }, [scrollToYearMonth, effectiveGridRef]);
   
   const rowCount = useMemo(() => {
-    const count = Math.ceil(enrichedGalleryItems.length / columnsCount);
-    debugLog(`Calculated rowCount: ${count} for ${enrichedGalleryItems.length} items with ${columnsCount} columns`);
-    return count;
-  }, [enrichedGalleryItems.length, columnsCount, debugLog]);
+    return Math.ceil(enrichedGalleryItems.length / columnsCount);
+  }, [enrichedGalleryItems.length, columnsCount]);
   
   const calculateCellStyle = useCallback((
     originalStyle: React.CSSProperties, 
@@ -173,11 +134,9 @@ const VirtualizedGalleryGrid = memo(({
     // Stocker la position de défilement
     scrollPositionRef.current = scrollTop;
     
-    debugLog(`handleScroll called with scrollTop=${scrollTop}`);
-    
     // Mettre à jour le mois courant
     updateCurrentYearMonthFromScroll(scrollTop, effectiveGridRef);
-  }, [scrollPositionRef, updateCurrentYearMonthFromScroll, effectiveGridRef, debugLog]);
+  }, [scrollPositionRef, updateCurrentYearMonthFromScroll, effectiveGridRef]);
   
   const itemData = useMemo(() => ({
     items: enrichedGalleryItems,
@@ -203,11 +162,6 @@ const VirtualizedGalleryGrid = memo(({
     return `media-${item.id}`;
   }, [enrichedGalleryItems, columnsCount]);
   
-  // Log when columnsCount changes
-  useEffect(() => {
-    debugLog(`columnsCount changed to ${columnsCount}`);
-  }, [columnsCount, debugLog]);
-  
   return (
     <div className="w-full h-full p-2 gallery-container relative">
       {/* Bandeau du mois courant */}
@@ -218,16 +172,12 @@ const VirtualizedGalleryGrid = memo(({
       
       <AutoSizer key={`gallery-grid-${gridKey}`}>
         {({ height, width }) => {
-          debugLog(`AutoSizer dimensions: width=${width}, height=${height}`);
-          
           const { 
             itemWidth, 
             itemHeight
           } = calculateGridParameters(width, columnsCount, gap, showDates);
           
           const columnWidth = itemWidth + gap;
-          
-          debugLog(`Grid parameters: itemWidth=${itemWidth}, itemHeight=${itemHeight}, columnWidth=${columnWidth}`);
           
           return (
             <FixedSizeGrid
@@ -274,4 +224,3 @@ VirtualizedGalleryGrid.displayName = 'VirtualizedGalleryGrid';
 export { useMonthNavigation };
 
 export default VirtualizedGalleryGrid;
-
