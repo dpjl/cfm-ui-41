@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { MediaListResponse, GalleryItem } from '@/types/gallery';
 import { throttle } from 'lodash';
@@ -35,6 +34,13 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
   const isRepositioningRef = useRef<boolean>(false);
   // Mémoriser le mois courant pour le repositionnement après changement de colonnes
   const lastYearMonthRef = useRef<string | null>(null);
+  // Référence à la grille externe pour le repositionnement
+  const externalGridRefRef = useRef<React.RefObject<any> | null>(null);
+
+  // Méthode pour sauvegarder la référence externe de la grille
+  const setExternalGridRef = useCallback((ref: React.RefObject<any> | null) => {
+    externalGridRefRef.current = ref;
+  }, []);
 
   // Mettre à jour la référence du nombre de colonnes lorsqu'il change
   useEffect(() => {
@@ -53,15 +59,17 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       gridColumnsRef.current = columnsCount;
       
       // Attendre que la grille soit reconstruite avant de restaurer la position
+      // Augmenter le délai pour s'assurer que la grille est entièrement reconstruite
       setTimeout(() => {
         if (lastYearMonthRef.current) {
           // Extraire année et mois
           const [year, month] = lastYearMonthRef.current.split('-').map(Number);
           
           // Restaurer la position au même mois qu'avant le changement
+          // Utiliser la référence externe de grille si disponible
           if (!isNaN(year) && !isNaN(month)) {
             console.log(`Repositioning to ${year}-${month} after column change`);
-            scrollToYearMonth(year, month, null);
+            scrollToYearMonth(year, month, externalGridRefRef.current);
             
             // Réactiver les mises à jour basées sur le défilement après un court délai
             setTimeout(() => {
@@ -70,7 +78,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
             }, 300);
           }
         }
-      }, 100);
+      }, 200); // Augmenter le délai pour s'assurer que la grille est correctement reconstruite
     } else {
       // Si c'est la première initialisation, simplement mettre à jour la référence
       gridColumnsRef.current = columnsCount;
@@ -253,7 +261,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     }
 
     return items;
-  }, [mediaListResponse, columnsCount]); // Correction critique: utiliser directement columnsCount au lieu de gridColumnsRef.current
+  }, [mediaListResponse, columnsCount]); // Correction: utiliser directement columnsCount au lieu de gridColumnsRef.current
 
   // Créer un index optimisé des séparateurs pour une recherche efficace
   const sortedSeparatorPositions = useMemo(() => {
@@ -281,6 +289,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
   }, [enrichedGalleryItems]);
 
   // Nouvelle fonction optimisée: calculer le mois-année à partir d'une position de défilement
+  // Ajout d'une zone de tolérance pour la détection du mois courant
   const getYearMonthFromScrollPosition = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
     if (!gridRef.current || sortedSeparatorPositions.length === 0) return null;
     
@@ -290,20 +299,39 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     // Calculer l'index de la première ligne visible
     const visibleRowIndex = Math.floor(scrollTop / rowHeight);
     
-    // Calculer l'index du premier élément de cette ligne
-    const firstVisibleItemIndex = visibleRowIndex * columnCount;
+    // Zone de tolérance: analyser les deux premières lignes visibles
+    const toleranceRows = 2;
     
-    // Cas spécial: vérifier si un séparateur est exactement sur la première ligne visible
-    const exactMatchIndex = sortedSeparatorPositions.findIndex(
-      sep => sep.index >= firstVisibleItemIndex && sep.index < firstVisibleItemIndex + columnCount
-    );
+    // Chercher des séparateurs dans la zone de tolérance (2 premières lignes visibles)
+    const separatorsInToleranceZone = [];
     
-    if (exactMatchIndex >= 0) {
-      // Un séparateur est présent sur la première ligne visible
-      return sortedSeparatorPositions[exactMatchIndex].yearMonth;
+    for (let i = 0; i < toleranceRows; i++) {
+      const rowStartIndex = (visibleRowIndex + i) * columnCount;
+      const rowEndIndex = rowStartIndex + columnCount - 1;
+      
+      // Chercher des séparateurs dans cette ligne
+      for (const sep of sortedSeparatorPositions) {
+        if (sep.index >= rowStartIndex && sep.index <= rowEndIndex) {
+          separatorsInToleranceZone.push(sep);
+        }
+      }
     }
     
-    // Sinon, recherche binaire pour trouver le dernier séparateur avant le premier élément visible
+    // Si nous avons trouvé des séparateurs dans la zone de tolérance,
+    // retourner le premier (celui le plus haut dans la page)
+    if (separatorsInToleranceZone.length > 0) {
+      // Trier par index croissant pour obtenir le premier séparateur
+      separatorsInToleranceZone.sort((a, b) => a.index - b.index);
+      return separatorsInToleranceZone[0].yearMonth;
+    }
+    
+    // Si aucun séparateur n'est trouvé dans la zone de tolérance,
+    // revenir à la méthode originale (recherche binaire)
+    
+    // Calculer l'index du premier élément de la première ligne visible
+    const firstVisibleItemIndex = visibleRowIndex * columnCount;
+    
+    // Recherche binaire pour trouver le dernier séparateur avant le premier élément visible
     let left = 0;
     let right = sortedSeparatorPositions.length - 1;
     let result = null;
@@ -356,8 +384,13 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     setCurrentYearMonth(yearMonth);
     setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
     
-    // Si aucun gridRef n'est fourni, nous ne faisons que mettre à jour les états
-    if (!gridRef) return true;
+    // Si aucun gridRef n'est fourni, essayer d'utiliser la référence externe sauvegardée
+    if (!gridRef && externalGridRefRef.current) {
+      gridRef = externalGridRefRef.current;
+    }
+    
+    // Si toujours pas de gridRef valide, on ne fait que mettre à jour les états
+    if (!gridRef?.current) return true;
     
     // Essayer d'abord avec l'index du séparateur (si disponible)
     const separatorIndex = separatorIndices.get(yearMonth);
@@ -389,6 +422,11 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     if (isRepositioningRef.current) {
       console.log('Scroll update skipped: repositioning in progress');
       return;
+    }
+    
+    // Sauvegarder la référence externe de la grille pour les repositionnements futurs
+    if (gridRef && !externalGridRefRef.current) {
+      externalGridRefRef.current = gridRef;
     }
     
     if (throttledUpdateRef.current) {
@@ -453,6 +491,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     separatorIndices,
     updateCurrentYearMonthFromScroll,
     navigateToPreviousMonth,
-    navigateToNextMonth
+    navigateToNextMonth,
+    setExternalGridRef
   };
 }

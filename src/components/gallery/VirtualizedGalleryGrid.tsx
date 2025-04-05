@@ -1,3 +1,4 @@
+
 import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -54,10 +55,6 @@ const VirtualizedGalleryGrid = memo(({
   // Utiliser le gridRef externe s'il est fourni, sinon utiliser l'interne
   const effectiveGridRef = externalGridRef || internalGridRef;
   
-  // Retiré le code qui forçait un recalcul explicite du mois après changement de colonnes
-  // Ce comportement est maintenant géré directement dans le hook useMediaDates
-  const prevColumnsRef = useRef(columnsCount);
-  
   const { 
     dateIndex, 
     scrollToYearMonth, 
@@ -65,8 +62,16 @@ const VirtualizedGalleryGrid = memo(({
     navigateToPreviousMonth,
     navigateToNextMonth,
     currentYearMonthLabel,
-    updateCurrentYearMonthFromScroll
+    updateCurrentYearMonthFromScroll,
+    setExternalGridRef // Nouvelle méthode utilisée pour passer la référence de la grille
   } = useMediaDates(mediaResponse, columnsCount);
+  
+  // Passer la référence de la grille au hook useMediaDates
+  useEffect(() => {
+    if (setExternalGridRef) {
+      setExternalGridRef(effectiveGridRef);
+    }
+  }, [effectiveGridRef, setExternalGridRef]);
   
   useGalleryMediaTracking(mediaResponse, effectiveGridRef);
   
