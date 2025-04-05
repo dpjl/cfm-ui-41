@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import LazyMediaItem from '@/components/LazyMediaItem';
 import MonthYearSeparator from './MonthYearSeparator';
@@ -42,13 +43,13 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
       // Calculate the style for this separator - make it span the entire row
       const separatorStyle = data.calculateCellStyle(style, columnIndex, true);
       
+      // On small screens, adjust the height for better readability
+      const finalStyle = isSmallScreen 
+        ? { ...separatorStyle, height: `${parseFloat(separatorStyle.height as string) * 0.9}px` }
+        : separatorStyle;
+      
       return (
-        <div 
-          style={separatorStyle} 
-          className="separator-cell" 
-          role="cell" 
-          aria-label={`Separator: ${item.label}`}
-        >
+        <div style={finalStyle} className="separator-cell relative" role="cell" aria-label={`Separator: ${item.label}`}>
           <MonthYearSeparator label={item.label} />
         </div>
       );
