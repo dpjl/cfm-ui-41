@@ -55,7 +55,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     debugLog(`setExternalGridRef called, previous ref: ${externalGridRefRef.current ? 'exists' : 'null'}, new ref: ${ref ? 'exists' : 'null'}`);
     externalGridRefRef.current = ref;
     
-    // Log les propriétés de la grille si disponible
+    // Ajout de logs pour les propriétés de la grille
     if (ref?.current) {
       const gridProps = {
         columnCount: ref.current.props?.columnCount,
@@ -67,62 +67,6 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       debugLog('Grid properties:', gridProps);
     }
   }, [debugLog]);
-
-  // Mettre à jour la référence du nombre de colonnes lorsqu'il change
-  useEffect(() => {
-    // Si le nombre de colonnes a changé et que nous avons un mois courant
-    if (gridColumnsRef.current !== columnsCount && currentYearMonth) {
-      // Journaliser le changement pour le débogage
-      debugLog(`Columns changed from ${gridColumnsRef.current} to ${columnsCount}, repositioning to ${currentYearMonth}`);
-      
-      // Sauvegarder le mois courant avant le changement
-      lastYearMonthRef.current = currentYearMonth;
-      
-      // Désactiver temporairement les mises à jour basées sur le défilement
-      isRepositioningRef.current = true;
-      debugLog('Scroll-based updates disabled for repositioning');
-      
-      // Mettre à jour la référence des colonnes
-      gridColumnsRef.current = columnsCount;
-      
-      // Attendre que la grille soit reconstruite avant de restaurer la position
-      // Augmenter le délai pour s'assurer que la grille est entièrement reconstruite
-      setTimeout(() => {
-        if (lastYearMonthRef.current) {
-          // Extraire année et mois
-          const [year, month] = lastYearMonthRef.current.split('-').map(Number);
-          
-          // Restaurer la position au même mois qu'avant le changement
-          // Utiliser la référence externe de grille si disponible
-          if (!isNaN(year) && !isNaN(month)) {
-            debugLog(`Repositioning to ${year}-${month} after column change`);
-            
-            if (externalGridRefRef.current?.current) {
-              const gridProps = {
-                columnCount: externalGridRefRef.current.current.props?.columnCount,
-                rowHeight: externalGridRefRef.current.current.props?.rowHeight,
-                rowCount: externalGridRefRef.current.current.props?.rowCount
-              };
-              debugLog('Grid properties before scrollToYearMonth:', gridProps);
-            } else {
-              debugLog('Warning: Grid reference not available for scrollToYearMonth');
-            }
-            
-            scrollToYearMonth(year, month, externalGridRefRef.current);
-            
-            // Réactiver les mises à jour basées sur le défilement après un court délai
-            setTimeout(() => {
-              debugLog('Re-enabling scroll-based updates');
-              isRepositioningRef.current = false;
-            }, 300);
-          }
-        }
-      }, 200); // Augmenter le délai pour s'assurer que la grille est correctement reconstruite
-    } else {
-      // Si c'est la première initialisation, simplement mettre à jour la référence
-      gridColumnsRef.current = columnsCount;
-    }
-  }, [columnsCount, currentYearMonth, debugLog, scrollToYearMonth]);
 
   // Construire les index à partir des données reçues
   const dateIndex = useMemo(() => {
@@ -199,6 +143,60 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     return result;
   }, [mediaListResponse, debugLog]);
 
+  // IMPORTANT: Define scrollToYearMonth function before it's used in useEffect or other functions
+  const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
+    const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
+    
+    debugLog(`scrollToYearMonth called: ${yearMonth}`);
+    
+    // Mise à jour directe des états pour éviter le décalage
+    setCurrentYearMonth(yearMonth);
+    setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
+    
+    // Si aucun gridRef n'est fourni, essayer d'utiliser la référence externe sauvegardée
+    if (!gridRef && externalGridRefRef.current) {
+      gridRef = externalGridRefRef.current;
+      debugLog('Using saved external grid reference');
+    }
+    
+    // Si toujours pas de gridRef valide, on ne fait que mettre à jour les états
+    if (!gridRef?.current) {
+      debugLog('No valid grid reference available for scrolling');
+      return true;
+    }
+    
+    debugLog(`Grid reference found, checking separator index for ${yearMonth}`);
+    
+    // Essayer d'abord avec l'index du séparateur (si disponible)
+    const separatorIndex = separatorIndices.get(yearMonth);
+    if (separatorIndex !== undefined && gridRef.current) {
+      const rowIndex = Math.floor(separatorIndex / gridRef.current.props.columnCount);
+      debugLog(`Scrolling to separator at index ${separatorIndex}, row ${rowIndex}`);
+      gridRef.current.scrollToItem({
+        align: 'start',
+        rowIndex
+      });
+      return true;
+    }
+    
+    debugLog(`No separator index found, trying with yearMonthToIndex for ${yearMonth}`);
+    
+    // Sinon, utiliser l'ancienne méthode avec yearMonthToIndex
+    const mediaIndex = dateIndex.yearMonthToIndex.get(yearMonth);
+    if (mediaIndex !== undefined && gridRef.current) {
+      const rowIndex = Math.floor(mediaIndex / gridRef.current.props.columnCount);
+      debugLog(`Scrolling to media index ${mediaIndex}, row ${rowIndex}`);
+      gridRef.current.scrollToItem({
+        align: 'start',
+        rowIndex
+      });
+      return true;
+    }
+    
+    debugLog(`Failed to scroll: no index found for ${yearMonth}`);
+    return false;
+  }, [dateIndex, separatorIndices, debugLog]);
+
   // Initialiser currentYearMonth avec le mois le plus récent disponible
   useEffect(() => {
     if (!currentYearMonth && dateIndex.years.length > 0) {
@@ -214,6 +212,62 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       }
     }
   }, [dateIndex, currentYearMonth, debugLog]);
+
+  // Mettre à jour la référence du nombre de colonnes lorsqu'il change
+  useEffect(() => {
+    // Si le nombre de colonnes a changé et que nous avons un mois courant
+    if (gridColumnsRef.current !== columnsCount && currentYearMonth) {
+      // Journaliser le changement pour le débogage
+      debugLog(`Columns changed from ${gridColumnsRef.current} to ${columnsCount}, repositioning to ${currentYearMonth}`);
+      
+      // Sauvegarder le mois courant avant le changement
+      lastYearMonthRef.current = currentYearMonth;
+      
+      // Désactiver temporairement les mises à jour basées sur le défilement
+      isRepositioningRef.current = true;
+      debugLog('Scroll-based updates disabled for repositioning');
+      
+      // Mettre à jour la référence des colonnes
+      gridColumnsRef.current = columnsCount;
+      
+      // Attendre que la grille soit reconstruite avant de restaurer la position
+      // Augmenter le délai pour s'assurer que la grille est entièrement reconstruite
+      setTimeout(() => {
+        if (lastYearMonthRef.current) {
+          // Extraire année et mois
+          const [year, month] = lastYearMonthRef.current.split('-').map(Number);
+          
+          // Restaurer la position au même mois qu'avant le changement
+          // Utiliser la référence externe de grille si disponible
+          if (!isNaN(year) && !isNaN(month)) {
+            debugLog(`Repositioning to ${year}-${month} after column change`);
+            
+            if (externalGridRefRef.current?.current) {
+              const gridProps = {
+                columnCount: externalGridRefRef.current.current.props?.columnCount,
+                rowHeight: externalGridRefRef.current.current.props?.rowHeight,
+                rowCount: externalGridRefRef.current.current.props?.rowCount
+              };
+              debugLog('Grid properties before scrollToYearMonth:', gridProps);
+            } else {
+              debugLog('Warning: Grid reference not available for scrollToYearMonth');
+            }
+            
+            scrollToYearMonth(year, month, externalGridRefRef.current);
+            
+            // Réactiver les mises à jour basées sur le défilement après un court délai
+            setTimeout(() => {
+              debugLog('Re-enabling scroll-based updates');
+              isRepositioningRef.current = false;
+            }, 300);
+          }
+        }
+      }, 200); // Augmenter le délai pour s'assurer que la grille est correctement reconstruite
+    } else {
+      // Si c'est la première initialisation, simplement mettre à jour la référence
+      gridColumnsRef.current = columnsCount;
+    }
+  }, [columnsCount, currentYearMonth, debugLog, scrollToYearMonth]);
 
   // Créer une structure de données enrichie avec des séparateurs de mois/année
   const enrichedGalleryItems = useMemo(() => {
@@ -470,60 +524,6 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       }, 100);
     }
   }, [getYearMonthFromScrollPosition, currentYearMonth, debugLog]);
-
-  // Fonctions pour la navigation par date - MISE À JOUR avec synchronisation directe
-  const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
-    const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
-    
-    debugLog(`scrollToYearMonth called: ${yearMonth}`);
-    
-    // Mise à jour directe des états pour éviter le décalage
-    setCurrentYearMonth(yearMonth);
-    setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
-    
-    // Si aucun gridRef n'est fourni, essayer d'utiliser la référence externe sauvegardée
-    if (!gridRef && externalGridRefRef.current) {
-      gridRef = externalGridRefRef.current;
-      debugLog('Using saved external grid reference');
-    }
-    
-    // Si toujours pas de gridRef valide, on ne fait que mettre à jour les états
-    if (!gridRef?.current) {
-      debugLog('No valid grid reference available for scrolling');
-      return true;
-    }
-    
-    debugLog(`Grid reference found, checking separator index for ${yearMonth}`);
-    
-    // Essayer d'abord avec l'index du séparateur (si disponible)
-    const separatorIndex = separatorIndices.get(yearMonth);
-    if (separatorIndex !== undefined && gridRef.current) {
-      const rowIndex = Math.floor(separatorIndex / gridRef.current.props.columnCount);
-      debugLog(`Scrolling to separator at index ${separatorIndex}, row ${rowIndex}`);
-      gridRef.current.scrollToItem({
-        align: 'start',
-        rowIndex
-      });
-      return true;
-    }
-    
-    debugLog(`No separator index found, trying with yearMonthToIndex for ${yearMonth}`);
-    
-    // Sinon, utiliser l'ancienne méthode avec yearMonthToIndex
-    const mediaIndex = dateIndex.yearMonthToIndex.get(yearMonth);
-    if (mediaIndex !== undefined && gridRef.current) {
-      const rowIndex = Math.floor(mediaIndex / gridRef.current.props.columnCount);
-      debugLog(`Scrolling to media index ${mediaIndex}, row ${rowIndex}`);
-      gridRef.current.scrollToItem({
-        align: 'start',
-        rowIndex
-      });
-      return true;
-    }
-    
-    debugLog(`Failed to scroll: no index found for ${yearMonth}`);
-    return false;
-  }, [dateIndex, separatorIndices, debugLog]);
 
   // Fonction pour mettre à jour le mois courant lors d'un défilement
   const updateCurrentYearMonthFromScroll = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
