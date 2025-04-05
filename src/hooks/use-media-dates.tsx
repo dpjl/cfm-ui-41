@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { MediaListResponse, GalleryItem } from '@/types/gallery';
 import { throttle } from 'lodash';
@@ -39,6 +40,9 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
   useEffect(() => {
     // Si le nombre de colonnes a changé et que nous avons un mois courant
     if (gridColumnsRef.current !== columnsCount && currentYearMonth) {
+      // Journaliser le changement pour le débogage
+      console.log(`Columns changed from ${gridColumnsRef.current} to ${columnsCount}, repositioning to ${currentYearMonth}`);
+      
       // Sauvegarder le mois courant avant le changement
       lastYearMonthRef.current = currentYearMonth;
       
@@ -56,10 +60,12 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
           
           // Restaurer la position au même mois qu'avant le changement
           if (!isNaN(year) && !isNaN(month)) {
+            console.log(`Repositioning to ${year}-${month} after column change`);
             scrollToYearMonth(year, month, null);
             
             // Réactiver les mises à jour basées sur le défilement après un court délai
             setTimeout(() => {
+              console.log('Re-enabling scroll-based updates');
               isRepositioningRef.current = false;
             }, 300);
           }
@@ -205,12 +211,12 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
       // Vérifier si nous sommes au début d'une ligne (dans une grille virtuelle)
       // Si nous ne sommes pas au début d'une ligne, ajouter des éléments vides pour compléter la ligne
       // Utiliser le paramètre columnsCount au lieu de la valeur codée en dur
-      const isStartOfRow = items.length % gridColumnsRef.current === 0;
+      const isStartOfRow = items.length % columnsCount === 0;
       
       if (!isStartOfRow) {
         // Calculer combien d'éléments vides nous devons ajouter pour atteindre le début de la ligne suivante
         // Utiliser columnsCount au lieu de la valeur codée en dur
-        const itemsToAdd = gridColumnsRef.current - (items.length % gridColumnsRef.current);
+        const itemsToAdd = columnsCount - (items.length % columnsCount);
         for (let i = 0; i < itemsToAdd; i++) {
           // Ajouter un élément vide explicite qui ne déclenchera pas de requêtes
           items.push({
@@ -247,7 +253,7 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     }
 
     return items;
-  }, [mediaListResponse, gridColumnsRef.current]); // Ajout de gridColumnsRef.current comme dépendance
+  }, [mediaListResponse, columnsCount]); // Correction critique: utiliser directement columnsCount au lieu de gridColumnsRef.current
 
   // Créer un index optimisé des séparateurs pour une recherche efficace
   const sortedSeparatorPositions = useMemo(() => {
@@ -380,7 +386,10 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
   // Fonction pour mettre à jour le mois courant lors d'un défilement
   const updateCurrentYearMonthFromScroll = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
     // Ne pas mettre à jour si nous sommes en train de repositionner
-    if (isRepositioningRef.current) return;
+    if (isRepositioningRef.current) {
+      console.log('Scroll update skipped: repositioning in progress');
+      return;
+    }
     
     if (throttledUpdateRef.current) {
       throttledUpdateRef.current(scrollTop, gridRef);
