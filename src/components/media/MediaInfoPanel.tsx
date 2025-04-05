@@ -1,14 +1,14 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { X, Eye, Trash, Download } from 'lucide-react';
-import { useMediaInfo } from '../../hooks/use-media-info';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { DetailedMediaInfo } from '@/api/imageApi';
 import { SelectionMode } from '@/hooks/use-gallery-selection';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLazyMediaInfo } from '@/hooks/use-lazy-media-info';
 
 interface MediaInfoPanelProps {
   mediaId?: string | null;
@@ -17,7 +17,7 @@ interface MediaInfoPanelProps {
   onOpenPreview: (id: string) => void;
   onDeleteSelected: () => void;
   onDownloadSelected: (ids?: string[]) => void;
-  mediaInfoMap: Map<string, DetailedMediaInfo | null>;
+  mediaInfoMap?: Map<string, DetailedMediaInfo | null>;
   selectionMode: SelectionMode;
   position: 'source' | 'destination';
 }
@@ -29,18 +29,35 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
   onOpenPreview,
   onDeleteSelected,
   onDownloadSelected,
-  mediaInfoMap,
+  mediaInfoMap: externalMediaInfoMap,
   selectionMode,
   position
 }) => {
   const isMobile = useIsMobile();
   const displayId = mediaId || (selectedIds.length > 0 ? selectedIds[0] : null);
   
-  const { mediaInfo, isLoading, error } = useMediaInfo(displayId, true, position);
+  // Utiliser notre nouveau hook de chargement paresseux
+  const {
+    loadMediaInfo,
+    getMediaInfo,
+    isLoading,
+    getError,
+    mediaInfoMap: internalMediaInfoMap
+  } = useLazyMediaInfo(position);
+  
+  // Déclencher le chargement des informations lorsque le panneau s'ouvre
+  useEffect(() => {
+    if (displayId) {
+      loadMediaInfo(displayId);
+    }
+  }, [displayId, loadMediaInfo]);
   
   if (!displayId) return null;
   
-  const displayInfo = mediaInfoMap.get(displayId) || mediaInfo;
+  // Utiliser les infos externes si fournies, sinon utiliser nos infos internes
+  const displayInfo = externalMediaInfoMap?.get(displayId) || getMediaInfo(displayId);
+  const loading = isLoading(displayId);
+  const error = getError(displayId);
   
   const isMultiSelection = selectedIds.length > 1;
 
@@ -67,7 +84,7 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
         </div>
         
         <ScrollArea className="max-h-[120px] w-full">
-          {isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+          {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
           
           {error && <p className="text-sm text-destructive">Failed to load media info</p>}
           

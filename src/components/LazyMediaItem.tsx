@@ -2,7 +2,6 @@
 import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
-import { useMediaInfo } from '@/hooks/use-media-info';
 import { getThumbnailUrl } from '@/api/imageApi';
 import MediaItemRenderer from './media/MediaItemRenderer';
 import { useMediaCache } from '@/hooks/use-media-cache';
@@ -16,7 +15,7 @@ interface LazyMediaItemProps {
   selected: boolean;
   onSelect: (id: string, extendSelection: boolean) => void;
   index: number;
-  showDates?: boolean; // Added the missing prop
+  showDates?: boolean;
   updateMediaInfo?: (id: string, info: any) => void;
   position: 'source' | 'destination';
 }
@@ -26,7 +25,7 @@ const LazyMediaItem = memo(({
   selected,
   onSelect,
   index,
-  showDates = false, // Added default value
+  showDates = false,
   updateMediaInfo,
   position
 }: LazyMediaItemProps) => {
@@ -57,10 +56,6 @@ const LazyMediaItem = memo(({
   // Référence combinée pour l'élément
   const setCombinedRef = useCombinedRef<HTMLDivElement>(elementRef, itemRef);
   
-  // Charger les informations sur le média uniquement lorsque l'élément est visible
-  const shouldLoadInfo = isIntersecting;
-  const { mediaInfo, isLoading } = useMediaInfo(id, shouldLoadInfo, position);
-  
   // Gérer le clic sur l'élément
   const handleItemClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -83,20 +78,14 @@ const LazyMediaItem = memo(({
     }
   }, [id, isIntersecting, position, getCachedThumbnailUrl, setCachedThumbnailUrl]);
   
-  // Mettre à jour le composant parent avec les informations sur le média - UNE FOIS
-  useEffect(() => {
-    if (mediaInfo && updateMediaInfo) {
-      updateMediaInfo(id, mediaInfo);
-    }
-  }, [id, mediaInfo, updateMediaInfo]);
-  
-  // Déterminer s'il s'agit d'une vidéo en fonction de l'extension du fichier
-  const isVideo = mediaInfo?.alt ? /\.(mp4|webm|ogg|mov)$/i.test(mediaInfo.alt) : false;
-  
   // Rendre uniquement un espace réservé lorsqu'il n'est pas visible
   if (!isIntersecting) {
     return <MediaPlaceholder ref={setCombinedRef} />;
   }
+  
+  // Déterminer si c'est une vidéo basé sur l'ID (implémentation simplifiée)
+  // Note: Nous ne chargeons plus les infos détaillées, donc nous nous basons sur l'ID
+  const isVideo = id.includes('vid-');
   
   return (
     <div
@@ -111,7 +100,7 @@ const LazyMediaItem = memo(({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       role="button"
-      aria-label={`Media item ${mediaInfo?.alt || id}`}
+      aria-label={`Media item ${id}`}
       aria-pressed={selected}
       tabIndex={0}
       onKeyDown={handleKeyDown}
@@ -124,7 +113,7 @@ const LazyMediaItem = memo(({
           <MediaItemRenderer
             mediaId={id}
             src={thumbnailUrl}
-            alt={mediaInfo?.alt || id}
+            alt={id}
             isVideo={Boolean(isVideo)}
             isSelected={selected}
             onLoad={() => setLoaded(true)}

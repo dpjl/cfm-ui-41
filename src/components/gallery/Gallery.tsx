@@ -5,7 +5,7 @@ import VirtualizedGalleryGrid from './VirtualizedGalleryGrid';
 import GalleryEmptyState from './GalleryEmptyState';
 import GallerySkeletons from './GallerySkeletons';
 import MediaPreview from '../MediaPreview';
-import { DetailedMediaInfo } from '@/api/imageApi';
+import { useLazyMediaInfo } from '@/hooks/use-lazy-media-info';
 import { useGallerySelection } from '@/hooks/use-gallery-selection';
 import { useGalleryPreviewHandler } from '@/hooks/use-gallery-preview-handler';
 import GalleryToolbar from './GalleryToolbar';
@@ -55,11 +55,13 @@ const Gallery: React.FC<GalleryProps> = ({
   onToggleFullView,
   gridRef
 }) => {
-  const [mediaInfoMap, setMediaInfoMap] = useState<Map<string, DetailedMediaInfo | null>>(new Map());
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const mediaIds = mediaResponse?.mediaIds || [];
+  
+  // Utiliser notre nouveau hook pour le chargement paresseux des infos
+  const { mediaInfoMap } = useLazyMediaInfo(position);
   
   const selection = useGallerySelection({
     mediaIds,
@@ -76,14 +78,6 @@ const Gallery: React.FC<GalleryProps> = ({
     selectedIds,
     position
   );
-
-  const updateMediaInfo = useCallback((id: string, info: DetailedMediaInfo | null) => {
-    setMediaInfoMap(prev => {
-      const newMap = new Map(prev);
-      newMap.set(id, info);
-      return newMap;
-    });
-  }, []);
 
   // Références aux fonctions de navigation mensuelle (définies par VirtualizedGalleryGrid)
   const navigateToPreviousMonthRef = useRef<() => boolean>(() => false);
@@ -137,13 +131,16 @@ const Gallery: React.FC<GalleryProps> = ({
     );
   }
 
+  // Déterminer si c'est une vidéo basé sur l'ID simplifié
   const isVideoPreview = (id: string): boolean => {
+    // D'abord vérifier si nous avons les infos détaillées
     const info = mediaInfoMap.get(id);
     if (info) {
       const fileName = info.alt?.toLowerCase() || '';
       return fileName.endsWith('.mp4') || fileName.endsWith('.mov');
     }
-    return false;
+    // Fallback sur l'ID
+    return id.includes('vid-');
   };
   
   return (
@@ -189,11 +186,10 @@ const Gallery: React.FC<GalleryProps> = ({
             onSelectId={selection.handleSelectItem}
             columnsCount={columnsCount}
             viewMode={viewMode}
-            updateMediaInfo={updateMediaInfo}
             position={position}
             gap={gap}
             onSetNavigationFunctions={handleSetNavigationFunctions}
-            gridRef={gridRef || gridRef}
+            gridRef={gridRef}
           />
         )}
       </div>
@@ -212,6 +208,6 @@ const Gallery: React.FC<GalleryProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default Gallery;

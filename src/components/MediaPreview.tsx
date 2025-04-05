@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Image, Video } from 'lucide-react';
 import { Button } from './ui/button';
+import { useLazyMediaInfo } from '@/hooks/use-lazy-media-info';
 
 interface MediaPreviewProps {
   mediaId: string;
@@ -30,6 +31,18 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
   const [error, setError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+
+  // Utiliser notre hook pour charger les infos au besoin
+  const { loadMediaInfo, getMediaInfo } = useLazyMediaInfo(position);
+  
+  // Charger les infos du média ouvert dans la prévisualisation
+  useEffect(() => {
+    loadMediaInfo(mediaId);
+  }, [mediaId, loadMediaInfo]);
+  
+  // Récupérer les infos pour l'attribut alt
+  const mediaInfo = getMediaInfo(mediaId);
+  const mediaAlt = mediaInfo?.alt || alt;
 
   // Mise à jour pour inclure le paramètre "directory" dans l'URL
   const mediaUrl = `${apiBaseUrl}/media?id=${mediaId}&directory=${position}`;
@@ -97,7 +110,7 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
           ) : (
             <img
               src={mediaUrl}
-              alt={alt}
+              alt={mediaAlt}
               className={`max-w-full max-h-full object-contain transition-opacity duration-300 ${
                 loaded ? 'opacity-100' : 'opacity-0'
               }`}

@@ -2,13 +2,12 @@
 import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { DetailedMediaInfo } from '@/api/imageApi';
 import { useGalleryGrid } from '@/hooks/use-gallery-grid';
 import { useGalleryMediaTracking } from '@/hooks/use-gallery-media-tracking';
 import GalleryGridCell from './GalleryGridCell';
 import DateSelector from './DateSelector';
 import { useMediaDates } from '@/hooks/use-media-dates';
-import { MediaListResponse, GalleryItem } from '@/types/gallery';
+import { MediaListResponse } from '@/types/gallery';
 import { 
   calculateGridParameters,
   getScrollbarWidth
@@ -23,7 +22,6 @@ interface VirtualizedGalleryGridProps {
   columnsCount: number;
   viewMode?: 'single' | 'split';
   showDates?: boolean;
-  updateMediaInfo?: (id: string, info: DetailedMediaInfo) => void;
   position: 'source' | 'destination';
   gap?: number;
   onSetNavigationFunctions?: (prevFn: () => boolean, nextFn: () => boolean) => void;
@@ -41,7 +39,6 @@ const VirtualizedGalleryGrid = memo(({
   columnsCount = 5,
   viewMode = 'single',
   showDates = false,
-  updateMediaInfo,
   position = 'source',
   gap = 8,
   onSetNavigationFunctions,
@@ -146,12 +143,11 @@ const VirtualizedGalleryGrid = memo(({
     selectedIds,
     onSelectId,
     showDates,
-    updateMediaInfo,
     position,
     columnsCount,
     gap,
     calculateCellStyle
-  }), [enrichedGalleryItems, selectedIds, onSelectId, showDates, updateMediaInfo, position, columnsCount, gap, calculateCellStyle]);
+  }), [enrichedGalleryItems, selectedIds, onSelectId, showDates, position, columnsCount, gap, calculateCellStyle]);
   
   const getItemKey = useCallback(({ columnIndex, rowIndex }: { columnIndex: number; rowIndex: number }) => {
     const index = rowIndex * columnsCount + columnIndex;
@@ -182,8 +178,6 @@ const VirtualizedGalleryGrid = memo(({
           } = calculateGridParameters(width, columnsCount, gap, showDates);
           
           const columnWidth = itemWidth + gap;
-          
-          const adjustedWidth = width - scrollbarWidth + 1;
           
           return (
             <FixedSizeGrid
