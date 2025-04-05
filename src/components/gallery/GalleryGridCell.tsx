@@ -4,7 +4,6 @@ import LazyMediaItem from '@/components/LazyMediaItem';
 import MonthYearSeparator from './MonthYearSeparator';
 import { GalleryItem } from '@/types/gallery';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
-import { useViewportHeight } from '@/hooks/use-viewport-height';
 
 interface GalleryGridCellProps {
   columnIndex: number;
@@ -30,7 +29,6 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
   // Calculate the index in the flat array based on row and column
   const index = rowIndex * data.columnsCount + columnIndex;
   const isSmallScreen = !useBreakpoint('sm');
-  const { bottomSafeArea } = useViewportHeight();
   
   // Return null for out of bounds indices to avoid errors
   if (index >= data.items.length) return null;
@@ -73,18 +71,8 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
   // Calculate the cell style with proper gap adjustments
   const adjustedStyle = data.calculateCellStyle(style, columnIndex, false);
   
-  // Sur les dernières rangées, on doit prendre en compte la safe area sur mobile
-  const isLastRowsOnMobile = isSmallScreen && 
-    bottomSafeArea > 0 && 
-    rowIndex >= (data.items.length / data.columnsCount) - 2;
-  
-  // Style final avec ajustement pour les dernières rangées sur mobile si nécessaire
-  const finalStyle = isLastRowsOnMobile 
-    ? { ...adjustedStyle, marginBottom: `${bottomSafeArea}px` }
-    : adjustedStyle;
-  
   return (
-    <div style={finalStyle}>
+    <div style={adjustedStyle}>
       <LazyMediaItem
         key={id}
         id={id}

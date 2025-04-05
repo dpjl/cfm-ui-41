@@ -53,12 +53,10 @@ const DateSelector: React.FC<DateSelectorProps> = ({
     return monthNames[month - 1] || '';
   };
 
-  // Déterminer la position du bouton selon la galerie (MODIFIÉ)
-  // Pour source (gauche): en bas à droite
-  // Pour destination (droite): en bas à gauche
+  // Determine button position class based on gallery position
   const buttonPositionClass = position === 'source' 
-    ? "bottom-4 right-4" 
-    : "bottom-4 left-4";
+    ? "top-2 left-2" 
+    : "top-2 right-2";
 
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
