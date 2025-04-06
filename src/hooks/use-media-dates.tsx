@@ -299,39 +299,21 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     // Calculer l'index de la première ligne visible
     const visibleRowIndex = Math.floor(scrollTop / rowHeight);
     
-    // Zone de tolérance: analyser les deux premières lignes visibles
-    const toleranceRows = 2;
-    
-    // Chercher des séparateurs dans la zone de tolérance (2 premières lignes visibles)
-    const separatorsInToleranceZone = [];
-    
-    for (let i = 0; i < toleranceRows; i++) {
-      const rowStartIndex = (visibleRowIndex + i) * columnCount;
-      const rowEndIndex = rowStartIndex + columnCount - 1;
-      
-      // Chercher des séparateurs dans cette ligne
-      for (const sep of sortedSeparatorPositions) {
-        if (sep.index >= rowStartIndex && sep.index <= rowEndIndex) {
-          separatorsInToleranceZone.push(sep);
-        }
-      }
-    }
-    
-    // Si nous avons trouvé des séparateurs dans la zone de tolérance,
-    // retourner le premier (celui le plus haut dans la page)
-    if (separatorsInToleranceZone.length > 0) {
-      // Trier par index croissant pour obtenir le premier séparateur
-      separatorsInToleranceZone.sort((a, b) => a.index - b.index);
-      return separatorsInToleranceZone[0].yearMonth;
-    }
-    
-    // Si aucun séparateur n'est trouvé dans la zone de tolérance,
-    // revenir à la méthode originale (recherche binaire)
-    
-    // Calculer l'index du premier élément de la première ligne visible
+     // Calculer l'index du premier élément de cette ligne
     const firstVisibleItemIndex = visibleRowIndex * columnCount;
+
+    // Code désactivé car à priori, ce cas est géré par la recherche binaire qui suit.
+    // Cas spécial: vérifier si un séparateur est exactement sur la première ligne visible
+    //const exactMatchIndex = sortedSeparatorPositions.findIndex(
+    //  sep => sep.index >= firstVisibleItemIndex && sep.index < firstVisibleItemIndex + columnCount
+    //);
     
-    // Recherche binaire pour trouver le dernier séparateur avant le premier élément visible
+    //if (exactMatchIndex >= 0) {
+      // Un séparateur est présent sur la première ligne visible
+    //  return sortedSeparatorPositions[exactMatchIndex].yearMonth;
+    //}
+    
+    // Sinon, recherche binaire pour trouver le dernier séparateur avant le premier élément visible
     let left = 0;
     let right = sortedSeparatorPositions.length - 1;
     let result = null;
@@ -359,21 +341,30 @@ export function useMediaDates(mediaListResponse?: MediaListResponse, columnsCoun
     return result;
   }, [sortedSeparatorPositions]);
 
-  // Mise à jour du mois-année courant lors du défilement
+  // Mise à jour du mois-année courant lors du défilement - MODIFIÉ
+  // Recréer la fonction throttle à chaque fois que getYearMonthFromScrollPosition change
   useEffect(() => {
-    // Créer une fonction throttle pour éviter trop de mises à jour
-    if (!throttledUpdateRef.current) {
-      throttledUpdateRef.current = throttle((scrollTop: number, gridRef: React.RefObject<any>) => {
-        // Obtenir le nouveau mois-année
-        const newYearMonth = getYearMonthFromScrollPosition(scrollTop, gridRef);
-        
-        // Mettre à jour l'état si nécessaire
-        if (newYearMonth && newYearMonth !== currentYearMonth) {
-          setCurrentYearMonth(newYearMonth);
-          setCurrentYearMonthLabel(formatMonthYearLabel(newYearMonth));
-        }
-      }, 100);
-    }
+    // Nettoyer l'ancienne fonction throttle si elle existe
+    const oldThrottledUpdate = throttledUpdateRef.current;
+    
+    // Créer une nouvelle fonction throttle avec les dépendances à jour
+    throttledUpdateRef.current = throttle((scrollTop: number, gridRef: React.RefObject<any>) => {
+      // Obtenir le nouveau mois-année
+      const newYearMonth = getYearMonthFromScrollPosition(scrollTop, gridRef);
+      
+      // Mettre à jour l'état si nécessaire
+      if (newYearMonth && newYearMonth !== currentYearMonth) {
+        setCurrentYearMonth(newYearMonth);
+        setCurrentYearMonthLabel(formatMonthYearLabel(newYearMonth));
+      }
+    }, 100);
+    
+    // Fonction de nettoyage pour annuler la fonction throttle précédente
+    return () => {
+      if (oldThrottledUpdate && typeof oldThrottledUpdate.cancel === 'function') {
+        oldThrottledUpdate.cancel();
+      }
+    };
   }, [getYearMonthFromScrollPosition, currentYearMonth]);
 
   // Fonctions pour la navigation par date - MISE À JOUR avec synchronisation directe
