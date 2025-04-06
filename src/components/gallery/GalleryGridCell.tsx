@@ -48,9 +48,17 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
         ? { ...separatorStyle, height: `${parseFloat(separatorStyle.height as string) * 0.9}px` }
         : separatorStyle;
       
+      // Extraire les dimensions de la cellule pour les passer au séparateur
+      const cellWidth = parseFloat(finalStyle.width as string);
+      const cellHeight = parseFloat(finalStyle.height as string);
+      
       return (
         <div style={finalStyle} className="separator-cell relative" role="cell" aria-label={`Separator: ${item.label}`}>
-          <MonthYearSeparator label={item.label} />
+          <MonthYearSeparator 
+            label={item.label} 
+            cellWidth={cellWidth}
+            cellHeight={cellHeight}
+          />
         </div>
       );
     }

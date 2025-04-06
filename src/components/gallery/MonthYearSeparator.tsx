@@ -1,12 +1,19 @@
+
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-media-query';
+
 interface MonthYearSeparatorProps {
   label: string;
+  cellWidth?: number;
+  cellHeight?: number;
 }
+
 const MonthYearSeparator: React.FC<MonthYearSeparatorProps> = ({
-  label
+  label,
+  cellWidth = 100,
+  cellHeight = 100
 }) => {
   // Extraire le mois et l'année du label (ex: "Janvier 2023")
   const parts = label.split(' ');
@@ -22,6 +29,26 @@ const MonthYearSeparator: React.FC<MonthYearSeparatorProps> = ({
     }
     return month;
   }, [month, isMobile]);
+
+  // Calculer dynamiquement les tailles de police en fonction des dimensions de la cellule
+  const dynamicStyles = useMemo(() => {
+    // Base de calcul proportionnelle à la plus petite dimension
+    const baseDimension = Math.min(cellWidth, cellHeight);
+    
+    // Facteurs d'ajustement pour différentes tailles d'écran
+    const monthSizeFactor = isMobile ? 0.06 : 0.05;
+    const yearSizeFactor = isMobile ? 0.09 : 0.08;
+    
+    // Calculer les tailles avec des limites min/max pour assurer la lisibilité
+    const monthSize = `clamp(0.5rem, calc(${baseDimension}px * ${monthSizeFactor}), 1rem)`;
+    const yearSize = `clamp(0.7rem, calc(${baseDimension}px * ${yearSizeFactor}), 1.4rem)`;
+    
+    return {
+      monthSize,
+      yearSize
+    };
+  }, [cellWidth, cellHeight, isMobile]);
+
   return <motion.div initial={{
     opacity: 0,
     scale: 0.95
@@ -44,12 +71,18 @@ const MonthYearSeparator: React.FC<MonthYearSeparatorProps> = ({
           <Calendar className="w-8 h-8 md:w-10 md:h-10 text-sky-600/60 dark:text-sky-400/60" strokeWidth={1.5} />
         </div>
         
-        {/* Texte du mois et de l'année - texte adaptatif */}
+        {/* Texte du mois et de l'année - avec taille adaptative basée sur la taille de la cellule */}
         <div className="z-10 flex flex-col items-center justify-center text-center">
-          <span className="text-[0.6rem] xs:text-xs sm:text-sm font-medium text-foreground/80">
+          <span 
+            className="font-medium text-foreground/80"
+            style={{ fontSize: dynamicStyles.monthSize }}
+          >
             {displayMonth}
           </span>
-          <span className="text-sm xs:text-base sm:text-lg font-bold text-foreground">
+          <span 
+            className="font-bold text-foreground"
+            style={{ fontSize: dynamicStyles.yearSize }}
+          >
             {year}
           </span>
         </div>
@@ -59,4 +92,5 @@ const MonthYearSeparator: React.FC<MonthYearSeparatorProps> = ({
       </div>
     </motion.div>;
 };
+
 export default MonthYearSeparator;
