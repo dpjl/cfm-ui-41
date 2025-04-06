@@ -10,6 +10,7 @@ import { useUIPanelState } from '@/hooks/core/use-ui-panel-state';
 import { useFilterState } from '@/hooks/core/use-filter-state';
 import { useMediaOperations } from '@/hooks/core/use-media-operations';
 import { useMutation } from '@tanstack/react-query';
+import { usePersistedGalleryPosition } from '@/hooks/use-persisted-gallery-position';
 
 // Interface du contexte
 interface GalleryContextType {
@@ -69,6 +70,12 @@ interface GalleryContextType {
   // Utilities
   isMobile: boolean;
   getViewModeType: (side: 'left' | 'right') => ViewModeType;
+  
+  // Persistance des positions
+  sourceYearMonth: string | null;
+  destYearMonth: string | null;
+  updateSourceYearMonth: (yearMonth: string | null, immediate?: boolean) => void;
+  updateDestYearMonth: (yearMonth: string | null, immediate?: boolean) => void;
 }
 
 // Création du contexte
@@ -93,6 +100,9 @@ export const GalleryProvider: React.FC<{children: React.ReactNode}> = ({ childre
   const uiState = useUIPanelState();
   const filterState = useFilterState();
   const columnsLayout = useColumnsLayout();
+  
+  // Nouveau hook pour la persistance des positions
+  const persistedPositions = usePersistedGalleryPosition();
   
   // Extraire les états des hooks
   const { selectedIdsLeft, selectedIdsRight, activeSide, setActiveSide, setSelectedIdsLeft, setSelectedIdsRight, selectionMode, toggleSelectionMode } = selectionState;
@@ -132,6 +142,15 @@ export const GalleryProvider: React.FC<{children: React.ReactNode}> = ({ childre
     getCurrentColumnsLeft,
     getCurrentColumnsRight,
     updateColumnCount,
+    getColumnValuesForViewMode: (side: 'left' | 'right') => {
+      const viewModeType = getViewModeType(side);
+      return {
+        'desktop': side === 'left' ? columnsLayout.getCurrentColumnsLeft(viewMode) : columnsLayout.getCurrentColumnsRight(viewMode),
+        'desktop-single': side === 'left' ? columnsLayout.getCurrentColumnsLeft(viewMode) : columnsLayout.getCurrentColumnsRight(viewMode),
+        'mobile-split': side === 'left' ? columnsLayout.getCurrentColumnsLeft(viewMode) : columnsLayout.getCurrentColumnsRight(viewMode),
+        'mobile-single': side === 'left' ? columnsLayout.getCurrentColumnsLeft(viewMode) : columnsLayout.getCurrentColumnsRight(viewMode)
+      };
+    },
     
     // Selection state
     selectedIdsLeft,
@@ -171,7 +190,13 @@ export const GalleryProvider: React.FC<{children: React.ReactNode}> = ({ childre
     
     // Utilities
     isMobile,
-    getViewModeType
+    getViewModeType,
+    
+    // Persistance des positions
+    sourceYearMonth: persistedPositions.sourceYearMonth,
+    destYearMonth: persistedPositions.destYearMonth,
+    updateSourceYearMonth: persistedPositions.updateSourcePosition,
+    updateDestYearMonth: persistedPositions.updateDestPosition
   };
   
   return (

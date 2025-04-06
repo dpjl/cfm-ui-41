@@ -14,6 +14,7 @@ import {
 } from '@/utils/grid-utils';
 import { useMonthNavigation } from '@/hooks/use-month-navigation';
 import CurrentMonthBanner from './CurrentMonthBanner';
+import { useGalleryContext } from '@/contexts/GalleryContext';
 
 interface VirtualizedGalleryGridProps {
   mediaResponse: MediaListResponse;
@@ -46,6 +47,18 @@ const VirtualizedGalleryGrid = memo(({
 }: VirtualizedGalleryGridProps) => {
   const mediaIds = mediaResponse?.mediaIds || [];
   
+  // Obtenir le contexte pour accéder aux fonctions de persistance
+  const galleryContext = useGalleryContext();
+  
+  // Déterminer la position et récupérer les valeurs et fonctions appropriées
+  const persistedYearMonth = position === 'source' 
+    ? galleryContext.sourceYearMonth 
+    : galleryContext.destYearMonth;
+    
+  const updateYearMonth = position === 'source'
+    ? galleryContext.updateSourceYearMonth
+    : galleryContext.updateDestYearMonth;
+  
   const {
     gridRef: internalGridRef,
     gridKey,
@@ -63,8 +76,15 @@ const VirtualizedGalleryGrid = memo(({
     navigateToNextMonth,
     currentYearMonthLabel,
     updateCurrentYearMonthFromScroll,
-    setExternalGridRef // Nouvelle méthode utilisée pour passer la référence de la grille
-  } = useMediaDates(mediaResponse, columnsCount);
+    setExternalGridRef,
+    currentYearMonth
+  } = useMediaDates(
+    mediaResponse, 
+    columnsCount,
+    position,
+    persistedYearMonth,
+    updateYearMonth
+  );
   
   // Passer la référence de la grille au hook useMediaDates
   useEffect(() => {
@@ -101,6 +121,7 @@ const VirtualizedGalleryGrid = memo(({
   
   const handleSelectYearMonth = useCallback((year: number, month: number) => {
     scrollToYearMonth(year, month, effectiveGridRef);
+    // Note: La persistance est gérée dans le hook useMediaDates
   }, [scrollToYearMonth, effectiveGridRef]);
   
   const rowCount = useMemo(() => {
