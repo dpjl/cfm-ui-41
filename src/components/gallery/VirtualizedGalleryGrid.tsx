@@ -14,7 +14,7 @@ import {
 import { useMonthNavigation } from '@/hooks/use-month-navigation';
 import CurrentMonthBanner from './CurrentMonthBanner';
 import { useGalleryContext } from '@/contexts/GalleryContext';
-import { useIsMobile } from '@/hooks/use-breakpoint';
+import { useIsMobile } from '@/hooks/use-media-query';
 
 interface VirtualizedGalleryGridProps {
   mediaResponse: MediaListResponse;
@@ -46,6 +46,7 @@ const VirtualizedGalleryGrid = memo(({
   gridRef: externalGridRef
 }: VirtualizedGalleryGridProps) => {
   const mediaIds = mediaResponse?.mediaIds || [];
+  const isMobile = useIsMobile();
   
   // Obtenir le contexte pour accéder aux fonctions de persistance
   const galleryContext = useGalleryContext();

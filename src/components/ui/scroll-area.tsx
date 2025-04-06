@@ -1,13 +1,15 @@
+
 import * as React from "react"
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-media-query"
 
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
 >(({ className, children, ...props }, ref) => {
-  const isMobile = useIsMobile(); // Assurez-vous d'importer useIsMobile
+  const isMobile = useIsMobile();
 
   return (
     <ScrollAreaPrimitive.Root
