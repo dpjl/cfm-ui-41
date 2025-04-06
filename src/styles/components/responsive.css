@@ -18,7 +18,7 @@
     
     /* Adjust the scrollbar for mobile */
     .mobile-scroll-area {
-      @apply overflow-auto;
+      @apply overflow-auto scrollbar-hidden;
       -webkit-overflow-scrolling: touch;
     }
     
@@ -84,32 +84,6 @@
   
   .column-slider-label {
     @apply flex items-center justify-between text-xs text-muted-foreground mb-1;
-  }
-  
-  /* Enhance mobile scrollbar experience */
-  @media (max-width: 768px) {
-    .gallery-scrollbar::-webkit-scrollbar {
-      width: 4px;
-    }
-    
-    .gallery-scrollbar::-webkit-scrollbar-thumb {
-      background-color: rgba(128, 128, 128, 0.4);
-      border-radius: 4px;
-    }
-    
-    .gallery-scrollbar {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
-    }
-    
-    /* Media info panel horizontal scroll */
-    .media-info-horizontal-scroll {
-      overflow-x: auto;
-      white-space: nowrap;
-      max-width: 100%;
-      scrollbar-width: thin;
-      -webkit-overflow-scrolling: touch;
-    }
   }
 
   /* Gallery transition classes */

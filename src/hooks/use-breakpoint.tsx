@@ -3,6 +3,7 @@ import * as React from "react"
 
 type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
+// Aligné sur les breakpoints Tailwind
 const breakpoints = {
   xs: 0,
   sm: 640,
@@ -14,7 +15,7 @@ const breakpoints = {
 
 export function useBreakpoint(breakpoint: Breakpoint) {
   const [isAboveBreakpoint, setIsAboveBreakpoint] = React.useState(() => {
-    if (typeof window === 'undefined') return undefined;
+    if (typeof window === 'undefined') return false;
     return window.innerWidth >= breakpoints[breakpoint];
   });
 
@@ -45,6 +46,7 @@ export function useBreakpoint(breakpoint: Breakpoint) {
   return isAboveBreakpoint;
 }
 
+// IMPORTANT: cette fonction retourne "true" pour mobile, ce qui est l'inverse de celle dans use-media-query.ts
 export function useIsMobile() {
   return !useBreakpoint('md'); // Consider anything below 'md' (768px) as mobile
 }

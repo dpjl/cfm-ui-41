@@ -32,7 +32,7 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-// Helper for common breakpoints
+// Helper for common breakpoints using Tailwind's default breakpoints
 export const useIsMobile = () => useMediaQuery('(max-width: 768px)');
 export const useIsTablet = () => useMediaQuery('(min-width: 769px) and (max-width: 1024px)');
 export const useIsDesktop = () => useMediaQuery('(min-width: 1025px)');

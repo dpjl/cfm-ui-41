@@ -1,3 +1,4 @@
+
 import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -216,7 +217,7 @@ const VirtualizedGalleryGrid = memo(({
               itemKey={getItemKey}
               onScroll={handleScroll}
               initialScrollTop={scrollPositionRef.current}
-              className={`scrollbar-vertical ${isMobile ? 'mobile-scrollbar-hidden' : ''}`}
+              className="scrollbar-hidden"
               style={{ 
                 overflowX: 'hidden',
                 scrollbarGutter: 'stable' as any

@@ -43,17 +43,12 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
       // Calculate the style for this separator - make it span the entire row
       const separatorStyle = data.calculateCellStyle(style, columnIndex, true);
       
-      // On small screens, adjust the height for better readability
-      const finalStyle = isSmallScreen 
-        ? { ...separatorStyle, height: `${parseFloat(separatorStyle.height as string) * 0.9}px` }
-        : separatorStyle;
-      
       // Extraire les dimensions de la cellule pour les passer au séparateur
-      const cellWidth = parseFloat(finalStyle.width as string);
-      const cellHeight = parseFloat(finalStyle.height as string);
+      const cellWidth = parseFloat(separatorStyle.width as string);
+      const cellHeight = parseFloat(separatorStyle.height as string);
       
       return (
-        <div style={finalStyle} className="separator-cell relative" role="cell" aria-label={`Separator: ${item.label}`}>
+        <div style={separatorStyle} className="separator-cell relative" role="cell" aria-label={`Separator: ${item.label}`}>
           <MonthYearSeparator 
             label={item.label} 
             cellWidth={cellWidth}
@@ -66,7 +61,7 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
     return null;
   }
   
-  // For empty cells, render a minimal placeholder without any content or API calls
+  // Pour empty cells, render a minimal placeholder without any content or API calls
   if (item.id.startsWith('empty-')) {
     const emptyStyle = data.calculateCellStyle(style, columnIndex, false);
     return <div style={emptyStyle} className="empty-cell" aria-hidden="true" />;
