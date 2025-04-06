@@ -1,4 +1,3 @@
-
 @layer base {
   /* Customized scrollbar styles */
   ::-webkit-scrollbar {
@@ -49,6 +48,14 @@
     
     .scrollable-content::-webkit-scrollbar {
       height: 3px;
+    }
+    
+    .mobile-scrollbar-hidden::-webkit-scrollbar {
+      display: none;
+    }
+    .mobile-scrollbar-hidden {
+      -ms-overflow-style: none;  /* IE et Edge */
+      scrollbar-width: none;     /* Firefox */
     }
   }
 }
