@@ -28,7 +28,7 @@ export function useMediaDates(
   columnsCount: number = 5,
   position: 'source' | 'destination' = 'source',
   persistedYearMonth?: string | null,
-  onYearMonthChange?: (yearMonth: string | null) => void
+  onYearMonthChange?: (yearMonth: string | null, immediate?: boolean) => void
 ) {
   const [currentYearMonth, setCurrentYearMonth] = useState<string | null>(null);
   const [currentYearMonthLabel, setCurrentYearMonthLabel] = useState<string | null>(null);
