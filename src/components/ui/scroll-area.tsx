@@ -3,19 +3,20 @@ import * as React from "react"
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
-import { useMediaQuery } from "@/hooks/use-media-query"
+import { useIsMobile } from "@/hooks/use-media-query"
 
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
 >(({ className, children, ...props }, ref) => {
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useIsMobile();
 
   return (
     <ScrollAreaPrimitive.Root
       ref={ref}
       className={cn(
         "relative overflow-hidden", 
+        isMobile && "mobile-scrollbar-hidden",
         className
       )}
       {...props}
@@ -23,8 +24,7 @@ const ScrollArea = React.forwardRef<
       <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
         {children}
       </ScrollAreaPrimitive.Viewport>
-      {/* Ne montrer la scrollbar que sur desktop */}
-      {!isMobile && <ScrollBar />}
+      <ScrollBar />
       <ScrollAreaPrimitive.Corner />
     </ScrollAreaPrimitive.Root>
   );

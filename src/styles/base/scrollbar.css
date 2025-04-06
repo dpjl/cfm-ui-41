@@ -1,6 +1,6 @@
 
 @layer base {
-  /* Customized scrollbar styles - Desktop */
+  /* Customized scrollbar styles */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -21,7 +21,6 @@
     @apply bg-muted-foreground/60;
   }
   
-  /* Dark mode adjustments */
   .dark ::-webkit-scrollbar-track {
     @apply bg-muted/30;
   }
@@ -34,32 +33,34 @@
     @apply bg-muted-foreground/50;
   }
 
-  /* Mobile-specific scrollbar handling - more aggressive approach */
-  @media (max-width: 768px) {
-    /* Hide all scrollbars by default on mobile */
-    * {
-      scrollbar-width: none !important;
-      -ms-overflow-style: none !important;
-    }
-    
-    *::-webkit-scrollbar {
-      display: none !important;
-    }
-    
-    /* Override for specific cases where scrollbar visibility is needed */
-    .scrollbar-mobile-visible {
-      scrollbar-width: thin !important;
-      -ms-overflow-style: auto !important;
-    }
-    
-    .scrollbar-mobile-visible::-webkit-scrollbar {
+  /* Mobile-specific styles */
+  @media (max-width: 640px) {
+    ::-webkit-scrollbar {
       width: 4px;
       height: 4px;
-      display: block !important;
+    }
+    
+    /* Enable horizontal scrolling for info panels */
+    .scrollable-content {
+      overflow-x: auto;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .scrollable-content::-webkit-scrollbar {
+      height: 3px;
+    }
+    
+    .mobile-scrollbar-hidden::-webkit-scrollbar {
+      display: none;
+    }
+    .mobile-scrollbar-hidden {
+      -ms-overflow-style: none;  /* IE et Edge */
+      scrollbar-width: none;     /* Firefox */
     }
   }
   
-  /* Utility class for adaptive text containers */
+  /* Classe spécifique pour les textes adaptatifs */
   .adaptive-text-container {
     display: flex;
     flex-direction: column;

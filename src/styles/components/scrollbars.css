@@ -1,32 +1,41 @@
 
-/* Styles pour les barres de défilement personnalisées - seulement pour les cas spécifiques */
+/* Styles personnalisés pour les barres de défilement */
 .scrollbar-vertical {
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color-transparent) transparent;
 }
 
 .scrollbar-horizontal {
   position: relative;
   overflow-x: auto;
   overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color-transparent) transparent;
 }
 
-/* Poignée de défilement visible pour les interfaces non-mobiles */
-@media (min-width: 769px) {
-  .scrollbar-handle {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 8px;
-    border-radius: 4px;
-    background-color: rgba(128, 128, 128, 0.3);
-    z-index: 20;
-    transition: opacity 0.3s;
-  }
+/* Poignée de défilement visible */
+.scrollbar-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 8px;
+  border-radius: 4px;
+  background-color: rgba(128, 128, 128, 0.3);
+  z-index: 20;
+  transition: opacity 0.3s;
+}
 
-  .scrollbar-handle:hover {
-    background-color: rgba(128, 128, 128, 0.5);
+.scrollbar-handle:hover {
+  background-color: rgba(128, 128, 128, 0.5);
+}
+
+/* Styles mobile */
+@media (max-width: 640px) {
+  .scrollbar-handle {
+    width: 10px;
   }
 }
 

@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -15,7 +14,7 @@ import {
 import { useMonthNavigation } from '@/hooks/use-month-navigation';
 import CurrentMonthBanner from './CurrentMonthBanner';
 import { useGalleryContext } from '@/contexts/GalleryContext';
-import { useMediaQuery } from '@/hooks/use-media-query';
+import { useIsMobile } from '@/hooks/use-media-query';
 
 interface VirtualizedGalleryGridProps {
   mediaResponse: MediaListResponse;
@@ -47,7 +46,7 @@ const VirtualizedGalleryGrid = memo(({
   gridRef: externalGridRef
 }: VirtualizedGalleryGridProps) => {
   const mediaIds = mediaResponse?.mediaIds || [];
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMobile = useIsMobile();
   
   // Obtenir le contexte pour accéder aux fonctions de persistance
   const galleryContext = useGalleryContext();
@@ -217,7 +216,7 @@ const VirtualizedGalleryGrid = memo(({
               itemKey={getItemKey}
               onScroll={handleScroll}
               initialScrollTop={scrollPositionRef.current}
-              className="scrollbar-vertical"
+              className={`scrollbar-vertical ${isMobile ? 'mobile-scrollbar-hidden' : ''}`}
               style={{ 
                 overflowX: 'hidden',
                 scrollbarGutter: 'stable' as any
