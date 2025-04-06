@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import VirtualizedGalleryGrid from './VirtualizedGalleryGrid';
@@ -10,7 +11,7 @@ import { useGalleryPreviewHandler } from '@/hooks/use-gallery-preview-handler';
 import GalleryToolbar from './GalleryToolbar';
 import { useGalleryMediaHandler } from '@/hooks/use-gallery-media-handler';
 import MediaInfoPanel from '../media/MediaInfoPanel';
-import { useIsMobile } from '@/hooks/use-breakpoint';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { MediaItem, GalleryViewMode, MediaListResponse } from '@/types/gallery';
 
 interface GalleryProps {
@@ -55,7 +56,7 @@ const Gallery: React.FC<GalleryProps> = ({
   gridRef
 }) => {
   const { t } = useLanguage();
-  const isMobile = useIsMobile();
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const containerRef = useRef<HTMLDivElement>(null);
   const mediaIds = mediaResponse?.mediaIds || [];
   

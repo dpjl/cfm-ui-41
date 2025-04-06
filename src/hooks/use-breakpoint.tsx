@@ -6,7 +6,7 @@ type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 const breakpoints = {
   xs: 0,
   sm: 640,
-  md: 768,
+  md: 768,  // Aligner avec useIsMobile de use-media-query.ts
   lg: 1024,
   xl: 1280,
   '2xl': 1536
@@ -45,6 +45,7 @@ export function useBreakpoint(breakpoint: Breakpoint) {
   return isAboveBreakpoint;
 }
 
+// Utiliser la même définition du mobile que dans use-media-query.ts
 export function useIsMobile() {
-  return !useBreakpoint('md'); // Consider anything below 'md' (768px) as mobile
+  return !useBreakpoint('md'); // Considère tout ce qui est en dessous de 'md' (768px) comme mobile
 }

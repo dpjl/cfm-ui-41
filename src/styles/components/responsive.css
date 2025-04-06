@@ -2,7 +2,7 @@
 /* Mobile optimization styles */
 @layer components {
   /* Gallery specific responsive styles */
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
     .glass-panel {
       @apply rounded-md shadow-sm border-0;
     }
@@ -86,28 +86,27 @@
     @apply flex items-center justify-between text-xs text-muted-foreground mb-1;
   }
   
-  /* Enhance mobile scrollbar experience */
+  /* Enhance mobile scrollbar experience - Overrides to make consistent */
   @media (max-width: 768px) {
-    .gallery-scrollbar::-webkit-scrollbar {
-      width: 4px;
+    /* Hide all scrollbars by default on mobile */
+    .gallery-scrollbar::-webkit-scrollbar,
+    .scrollable-content::-webkit-scrollbar,
+    .media-info-horizontal-scroll::-webkit-scrollbar {
+      display: none;
     }
     
-    .gallery-scrollbar::-webkit-scrollbar-thumb {
-      background-color: rgba(128, 128, 128, 0.4);
-      border-radius: 4px;
+    .gallery-scrollbar,
+    .scrollable-content,
+    .media-info-horizontal-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
     
-    .gallery-scrollbar {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
-    }
-    
-    /* Media info panel horizontal scroll */
+    /* Enable touch scrolling for horizontal content */
     .media-info-horizontal-scroll {
       overflow-x: auto;
       white-space: nowrap;
       max-width: 100%;
-      scrollbar-width: thin;
       -webkit-overflow-scrolling: touch;
     }
   }
