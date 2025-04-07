@@ -108,7 +108,7 @@ export function usePositionRestoration({
     if (previousColumnsRef.current !== columnsCount && currentYearMonth) {
       console.log(`[${position}] Columns changed from ${previousColumnsRef.current} to ${columnsCount}`);
       previousColumnsRef.current = columnsCount;
-      restorePosition('column-change');
+      restorePosition('column-change', currentYearMonth);
     }
   }, [columnsCount, currentYearMonth, position, restorePosition]);
   
@@ -117,7 +117,7 @@ export function usePositionRestoration({
     if (previousViewModeRef.current !== viewMode && currentYearMonth) {
       console.log(`[${position}] View mode changed from ${previousViewModeRef.current} to ${viewMode}`);
       previousViewModeRef.current = viewMode;
-      restorePosition('view-mode-change');
+      restorePosition('view-mode-change', currentYearMonth);
     }
   }, [viewMode, currentYearMonth, position, restorePosition]);
   
@@ -129,7 +129,7 @@ export function usePositionRestoration({
     
     if (isSignificantChange && currentYearMonth) {
       previousSizeRef.current = { width, height };
-      restorePosition('resize');
+      restorePosition('resize', currentYearMonth);
     }
   }, [currentYearMonth, restorePosition]);
   
