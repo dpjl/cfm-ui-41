@@ -5,10 +5,7 @@ import NotFound from './pages/NotFound';
 
 export function AppRoutes() {
   return (
-    <Routes>
-      {/* Redirection de /index.html vers la racine */}
-      <Route path="/index.html" element={<Navigate to="/" replace />} />
-      
+    <Routes>    
       {/* Route principale */}
       <Route path="/" element={<Index />} />
       
