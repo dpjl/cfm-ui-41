@@ -64,7 +64,6 @@ const VirtualizedGalleryGrid = memo(({
   const {
     gridRef: internalGridRef,
     gridKey,
-    scrollPositionRef
   } = useGalleryGrid();
   
   // Utiliser le gridRef externe s'il est fourni, sinon utiliser l'interne
@@ -79,7 +78,8 @@ const VirtualizedGalleryGrid = memo(({
     currentYearMonthLabel,
     updateCurrentYearMonthFromScroll,
     setExternalGridRef,
-    currentYearMonth
+    currentYearMonth,
+    handleResize
   } = useMediaDates(
     mediaResponse, 
     columnsCount,
@@ -154,12 +154,9 @@ const VirtualizedGalleryGrid = memo(({
   
   // Gestionnaire de défilement pour mettre à jour le mois courant
   const handleScroll = useCallback(({ scrollTop }: { scrollTop: number }) => {
-    // Stocker la position de défilement
-    scrollPositionRef.current = scrollTop;
-    
     // Mettre à jour le mois courant
     updateCurrentYearMonthFromScroll(scrollTop, effectiveGridRef);
-  }, [scrollPositionRef, updateCurrentYearMonthFromScroll, effectiveGridRef]);
+  }, [updateCurrentYearMonthFromScroll, effectiveGridRef]);
   
   const itemData = useMemo(() => ({
     items: enrichedGalleryItems,
@@ -193,7 +190,7 @@ const VirtualizedGalleryGrid = memo(({
         position={position}
       />
       
-      <AutoSizer key={`gallery-grid-${gridKey}`}>
+      <AutoSizer key={`gallery-grid-${gridKey}`} onResize={handleResize}>
         {({ height, width }) => {
           const { 
             itemWidth, 
@@ -216,7 +213,6 @@ const VirtualizedGalleryGrid = memo(({
               overscanColumnCount={2}
               itemKey={getItemKey}
               onScroll={handleScroll}
-              initialScrollTop={scrollPositionRef.current}
               className="scrollbar-hidden"
               style={{ 
                 overflowX: 'hidden',
