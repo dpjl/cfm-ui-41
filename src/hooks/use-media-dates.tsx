@@ -129,6 +129,31 @@ export function useMediaDates(
     }
   }, [dateIndex, currentYearMonth]);
 
+  // Créer un index optimisé des séparateurs pour une recherche efficace
+  const sortedSeparatorPositions = useMemo(() => {
+    const positions: {index: number, yearMonth: string}[] = [];
+    
+    enrichedGalleryItems.forEach((item) => {
+      if (item.type === 'separator') {
+        positions.push({index: item.index, yearMonth: item.yearMonth});
+      }
+    });
+    
+    // Tri par index croissant
+    return positions.sort((a, b) => a.index - b.index);
+  }, [enrichedGalleryItems]);
+
+  // Create separator indices BEFORE using it in the callback
+  const separatorIndices = useMemo(() => {
+    const indices = new Map<string, number>();
+    enrichedGalleryItems.forEach((item, index) => {
+      if (item.type === 'separator') {
+        indices.set(item.yearMonth, index);
+      }
+    });
+    return indices;
+  }, [enrichedGalleryItems]);
+
   // Fonction pour faire défiler vers une année-mois spécifique
   const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
     const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
@@ -265,31 +290,6 @@ export function useMediaDates(
 
     return items;
   }, [mediaListResponse, columnsCount]);
-
-  // Créer un index optimisé des séparateurs pour une recherche efficace
-  const sortedSeparatorPositions = useMemo(() => {
-    const positions: {index: number, yearMonth: string}[] = [];
-    
-    enrichedGalleryItems.forEach((item) => {
-      if (item.type === 'separator') {
-        positions.push({index: item.index, yearMonth: item.yearMonth});
-      }
-    });
-    
-    // Tri par index croissant
-    return positions.sort((a, b) => a.index - b.index);
-  }, [enrichedGalleryItems]);
-
-  // Index pour accéder rapidement à un séparateur par yearMonth
-  const separatorIndices = useMemo(() => {
-    const indices = new Map<string, number>();
-    enrichedGalleryItems.forEach((item, index) => {
-      if (item.type === 'separator') {
-        indices.set(item.yearMonth, index);
-      }
-    });
-    return indices;
-  }, [enrichedGalleryItems]);
 
   // Nouvelle fonction optimisée: calculer le mois-année à partir d'une position de défilement
   const getYearMonthFromScrollPosition = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
