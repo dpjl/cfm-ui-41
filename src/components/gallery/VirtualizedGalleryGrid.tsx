@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -90,7 +89,7 @@ const VirtualizedGalleryGrid = memo(({
   
   // Passer la référence de la grille au hook useMediaDates
   useEffect(() => {
-    if (setExternalGridRef) {
+    if (setExternalGridRef && effectiveGridRef) {
       setExternalGridRef(effectiveGridRef);
     }
   }, [effectiveGridRef, setExternalGridRef]);

@@ -13,7 +13,7 @@ const RESTORATION_DELAYS = {
 type PositionRestorationSource = 'column-change' | 'view-mode-change' | 'resize' | 'initial' | 'manual';
 
 interface UsePositionRestorationProps {
-  gridRef: React.RefObject<FixedSizeGrid>;
+  gridRef: React.RefObject<FixedSizeGrid> | null;
   currentYearMonth: string | null;
   onScrollToYearMonth: (year: number, month: number, gridRef: React.RefObject<any>) => boolean;
   persistedYearMonth?: string | null;
@@ -57,7 +57,8 @@ export function usePositionRestoration({
     source: PositionRestorationSource,
     yearMonthToRestore: string | null = null
   ) => {
-    if (!gridRef.current) return false;
+    // Vérifier si la référence de la grille est valide
+    if (!gridRef) return false;
     
     // Utiliser la position fournie, ou la dernière connue, ou la position actuelle
     const targetYearMonth = yearMonthToRestore || lastYearMonthRef.current || currentYearMonth;
@@ -74,7 +75,7 @@ export function usePositionRestoration({
     
     // Effectuer la restauration après un délai pour permettre la reconstruction de la grille
     setTimeout(() => {
-      if (targetYearMonth && gridRef.current) {
+      if (targetYearMonth && gridRef) {
         const [year, month] = targetYearMonth.split('-').map(Number);
         
         if (!isNaN(year) && !isNaN(month)) {
@@ -140,7 +141,8 @@ export function usePositionRestoration({
   
   // Initialisation avec la position persistée
   useEffect(() => {
-    if (persistedYearMonth && !hasInitializedRef.current && gridRef.current) {
+    // Vérifier si gridRef existe avant d'accéder à sa propriété current
+    if (persistedYearMonth && !hasInitializedRef.current && gridRef) {
       hasInitializedRef.current = true;
       console.log(`[${position}] Initializing with persisted position: ${persistedYearMonth}`);
       restorePosition('initial', persistedYearMonth);

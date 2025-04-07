@@ -170,7 +170,7 @@ export function useMediaDates(
     }
     
     return false;
-  }, [dateIndex.yearMonthToIndex]);
+  }, [dateIndex.yearMonthToIndex, separatorIndices]);
 
   // Créer une structure de données enrichie avec des séparateurs de mois/année
   const enrichedGalleryItems = useMemo(() => {
