@@ -114,90 +114,7 @@ export function useMediaDates(
     };
   }, [mediaListResponse]);
 
-  // Initialiser currentYearMonth avec le mois le plus récent disponible
-  useEffect(() => {
-    if (!currentYearMonth && dateIndex.years.length > 0) {
-      const mostRecentYear = dateIndex.years[0]; // Les années sont triées par ordre décroissant
-      const monthsForYear = dateIndex.monthsByYear.get(mostRecentYear);
-      
-      if (monthsForYear && monthsForYear.length > 0) {
-        const mostRecentMonth = monthsForYear[monthsForYear.length - 1]; 
-        const initialYearMonth = `${mostRecentYear}-${mostRecentMonth.toString().padStart(2, '0')}`;
-        setCurrentYearMonth(initialYearMonth);
-        setCurrentYearMonthLabel(formatMonthYearLabel(initialYearMonth));
-      }
-    }
-  }, [dateIndex, currentYearMonth]);
-
-  // Créer un index optimisé des séparateurs pour une recherche efficace
-  const sortedSeparatorPositions = useMemo(() => {
-    const positions: {index: number, yearMonth: string}[] = [];
-    
-    enrichedGalleryItems.forEach((item) => {
-      if (item.type === 'separator') {
-        positions.push({index: item.index, yearMonth: item.yearMonth});
-      }
-    });
-    
-    // Tri par index croissant
-    return positions.sort((a, b) => a.index - b.index);
-  }, [enrichedGalleryItems]);
-
-  // Create separator indices BEFORE using it in the callback
-  const separatorIndices = useMemo(() => {
-    const indices = new Map<string, number>();
-    enrichedGalleryItems.forEach((item, index) => {
-      if (item.type === 'separator') {
-        indices.set(item.yearMonth, index);
-      }
-    });
-    return indices;
-  }, [enrichedGalleryItems]);
-
-  // Fonction pour faire défiler vers une année-mois spécifique
-  const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
-    const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
-    
-    // Indiquer que c'est un changement manuel pour une mise à jour immédiate
-    isManualChangeRef.current = true;
-    
-    // Mise à jour directe des états pour éviter le décalage
-    setCurrentYearMonth(yearMonth);
-    setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
-    
-    // Si aucun gridRef n'est fourni, essayer d'utiliser la référence externe sauvegardée
-    if (!gridRef && externalGridRefRef.current) {
-      gridRef = externalGridRefRef.current;
-    }
-    
-    // Si toujours pas de gridRef valide, on ne fait que mettre à jour les états
-    if (!gridRef?.current) return true;
-    
-    // Essayer d'abord avec l'index du séparateur (si disponible)
-    const separatorIndex = separatorIndices.get(yearMonth);
-    if (separatorIndex !== undefined && gridRef.current) {
-      const rowIndex = Math.floor(separatorIndex / gridRef.current.props.columnCount);
-      gridRef.current.scrollToItem({
-        align: 'start',
-        rowIndex
-      });
-      return true;
-    }
-    
-    // Sinon, utiliser l'ancienne méthode avec yearMonthToIndex
-    const mediaIndex = dateIndex.yearMonthToIndex.get(yearMonth);
-    if (mediaIndex !== undefined && gridRef.current) {
-      gridRef.current.scrollToItem({
-        align: 'start',
-        rowIndex: Math.floor(mediaIndex / gridRef.current.props.columnCount)
-      });
-      return true;
-    }
-    
-    return false;
-  }, [dateIndex.yearMonthToIndex, separatorIndices]);
-
-  // Créer une structure de données enrichie avec des séparateurs de mois/année
+  // Premier useMemo pour créer enrichedGalleryItems
   const enrichedGalleryItems = useMemo(() => {
     if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
       return [];
@@ -290,6 +207,89 @@ export function useMediaDates(
 
     return items;
   }, [mediaListResponse, columnsCount]);
+
+  // Créer un index optimisé des séparateurs APRÈS avoir créé enrichedGalleryItems
+  const sortedSeparatorPositions = useMemo(() => {
+    const positions: {index: number, yearMonth: string}[] = [];
+    
+    enrichedGalleryItems.forEach((item) => {
+      if (item.type === 'separator') {
+        positions.push({index: item.index, yearMonth: item.yearMonth});
+      }
+    });
+    
+    // Tri par index croissant
+    return positions.sort((a, b) => a.index - b.index);
+  }, [enrichedGalleryItems]);
+
+  // Create separator indices BEFORE using it in the callback
+  const separatorIndices = useMemo(() => {
+    const indices = new Map<string, number>();
+    enrichedGalleryItems.forEach((item, index) => {
+      if (item.type === 'separator') {
+        indices.set(item.yearMonth, index);
+      }
+    });
+    return indices;
+  }, [enrichedGalleryItems]);
+
+  // Initialiser currentYearMonth avec le mois le plus récent disponible
+  useEffect(() => {
+    if (!currentYearMonth && dateIndex.years.length > 0) {
+      const mostRecentYear = dateIndex.years[0]; // Les années sont triées par ordre décroissant
+      const monthsForYear = dateIndex.monthsByYear.get(mostRecentYear);
+      
+      if (monthsForYear && monthsForYear.length > 0) {
+        const mostRecentMonth = monthsForYear[monthsForYear.length - 1]; 
+        const initialYearMonth = `${mostRecentYear}-${mostRecentMonth.toString().padStart(2, '0')}`;
+        setCurrentYearMonth(initialYearMonth);
+        setCurrentYearMonthLabel(formatMonthYearLabel(initialYearMonth));
+      }
+    }
+  }, [dateIndex, currentYearMonth]);
+
+  // Fonction pour faire défiler vers une année-mois spécifique
+  const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
+    const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
+    
+    // Indiquer que c'est un changement manuel pour une mise à jour immédiate
+    isManualChangeRef.current = true;
+    
+    // Mise à jour directe des états pour éviter le décalage
+    setCurrentYearMonth(yearMonth);
+    setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
+    
+    // Si aucun gridRef n'est fourni, essayer d'utiliser la référence externe sauvegardée
+    if (!gridRef && externalGridRefRef.current) {
+      gridRef = externalGridRefRef.current;
+    }
+    
+    // Si toujours pas de gridRef valide, on ne fait que mettre à jour les états
+    if (!gridRef?.current) return true;
+    
+    // Essayer d'abord avec l'index du séparateur (si disponible)
+    const separatorIndex = separatorIndices.get(yearMonth);
+    if (separatorIndex !== undefined && gridRef.current) {
+      const rowIndex = Math.floor(separatorIndex / gridRef.current.props.columnCount);
+      gridRef.current.scrollToItem({
+        align: 'start',
+        rowIndex
+      });
+      return true;
+    }
+    
+    // Sinon, utiliser l'ancienne méthode avec yearMonthToIndex
+    const mediaIndex = dateIndex.yearMonthToIndex.get(yearMonth);
+    if (mediaIndex !== undefined && gridRef.current) {
+      gridRef.current.scrollToItem({
+        align: 'start',
+        rowIndex: Math.floor(mediaIndex / gridRef.current.props.columnCount)
+      });
+      return true;
+    }
+    
+    return false;
+  }, [dateIndex.yearMonthToIndex, separatorIndices]);
 
   // Nouvelle fonction optimisée: calculer le mois-année à partir d'une position de défilement
   const getYearMonthFromScrollPosition = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
