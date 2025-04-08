@@ -1,3 +1,4 @@
+
 import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -77,8 +78,7 @@ const VirtualizedGalleryGrid = memo(({
     currentYearMonthLabel,
     updateCurrentYearMonthFromScroll,
     setExternalGridRef,
-    currentYearMonth,
-    handleResize
+    currentYearMonth
   } = useMediaDates(
     mediaResponse, 
     columnsCount,
@@ -189,7 +189,7 @@ const VirtualizedGalleryGrid = memo(({
         position={position}
       />
       
-      <AutoSizer key={`gallery-grid-${gridKey}`} onResize={handleResize}>
+      <AutoSizer key={`gallery-grid-${gridKey}`}>
         {({ height, width }) => {
           const { 
             itemWidth, 

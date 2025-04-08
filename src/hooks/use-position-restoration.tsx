@@ -1,6 +1,7 @@
 
 import { useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { useGridRenderDetection } from './use-grid-render-detection';
+import { useGridDimensionChange } from './use-grid-dimension-change';
 import type { FixedSizeGrid } from 'react-window';
 
 // Configuration des délais pour différentes opérations
@@ -8,7 +9,7 @@ const RESTORATION_DELAYS = {
   UNLOCK_UPDATES: 300  // Attente avant de réactiver les mises à jour
 };
 
-type PositionRestorationSource = 'grid-render' | 'initial' | 'manual';
+type PositionRestorationSource = 'grid-render' | 'initial' | 'manual' | 'dimension-change';
 
 interface UsePositionRestorationProps {
   gridRef: React.RefObject<FixedSizeGrid> | null;
@@ -17,7 +18,7 @@ interface UsePositionRestorationProps {
   persistedYearMonth?: string | null;
   onUpdateYearMonth?: (yearMonth: string | null, immediate?: boolean) => void;
   position?: 'source' | 'destination';
-  columnsCount?: number; // Added to fix the error
+  columnsCount?: number;
 }
 
 /**
@@ -101,6 +102,18 @@ export function usePositionRestoration({
     }
   }, [restorePosition, persistedYearMonth]));
   
+  // Utiliser le hook de détection de changement de dimensions
+  useGridDimensionChange(
+    gridRef,
+    useCallback((currentDimensions, prevDimensions, gridRef) => {
+      if (lastYearMonthRef.current && !isRestoring) {
+        console.log(`[${position}] Grid dimensions changed, restoring position`);
+        restorePosition('dimension-change');
+      }
+    }, [position, isRestoring, restorePosition]),
+    [isRestoring] // dépendances additionnelles
+  );
+  
   // Initialisation avec la position persistée
   useLayoutEffect(() => {
     // Vérifier si gridRef existe avant d'accéder à sa propriété current
@@ -116,18 +129,9 @@ export function usePositionRestoration({
     return restorePosition('manual', yearMonth);
   }, [restorePosition]);
 
-  // Add handleResize function to handle grid size changes
-  const handleResize = useCallback(() => {
-    if (lastYearMonthRef.current && !isRestoring) {
-      console.log(`[${position}] Grid resize detected, restoring position`);
-      restorePosition('grid-render');
-    }
-  }, [position, isRestoring, restorePosition]);
-
   return {
     isRestoring,
     restoreToPosition,
-    lastPosition: lastYearMonthRef.current,
-    handleResize // Add this property to fix the error
+    lastPosition: lastYearMonthRef.current
   };
 }

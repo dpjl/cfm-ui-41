@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { MediaListResponse, GalleryItem } from '@/types/gallery';
-import { throttle } from 'lodash';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { usePositionRestoration } from './use-position-restoration';
+import type { FixedSizeGrid } from 'react-window';
+import { MediaListResponse, EnrichedGalleryItem } from '@/types/gallery';
 
 interface MediaDateIndex {
   // Maps ID to date
@@ -25,9 +25,9 @@ const formatMonthYearLabel = (yearMonth: string): string => {
 };
 
 export function useMediaDates(
-  mediaListResponse?: MediaListResponse, 
-  columnsCount: number = 5,
-  position: 'source' | 'destination' = 'source',
+  mediaResponse: MediaListResponse | undefined,
+  columnsCount: number,
+  position: 'source' | 'destination',
   persistedYearMonth?: string | null,
   onYearMonthChange?: (yearMonth: string | null, immediate?: boolean) => void
 ) {
@@ -47,7 +47,7 @@ export function useMediaDates(
 
   // Construire les index à partir des données reçues
   const dateIndex = useMemo(() => {
-    if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
+    if (!mediaResponse?.mediaIds || !mediaResponse?.mediaDates) {
       return {
         idToDate: new Map(),
         yearMonthToIndex: new Map(),
@@ -56,7 +56,7 @@ export function useMediaDates(
       };
     }
 
-    const { mediaIds, mediaDates } = mediaListResponse;
+    const { mediaIds, mediaDates } = mediaResponse;
     const idToDate = new Map<string, string>();
     const yearMonthToIndex = new Map<string, number>();
     const yearMonthSet = new Set<string>();
@@ -112,16 +112,16 @@ export function useMediaDates(
       years,
       monthsByYear: monthsByYearMap
     };
-  }, [mediaListResponse]);
+  }, [mediaResponse]);
 
   // Premier useMemo pour créer enrichedGalleryItems
   const enrichedGalleryItems = useMemo(() => {
-    if (!mediaListResponse?.mediaIds || !mediaListResponse?.mediaDates) {
+    if (!mediaResponse?.mediaIds || !mediaResponse?.mediaDates) {
       return [];
     }
 
-    const { mediaIds, mediaDates } = mediaListResponse;
-    const items: GalleryItem[] = [];
+    const { mediaIds, mediaDates } = mediaResponse;
+    const items: EnrichedGalleryItem[] = [];
     let actualIndex = 0; // Index réel dans la liste finale
 
     // Fonction pour formatter le label du mois/année (ex: "Janvier 2023")
@@ -206,7 +206,7 @@ export function useMediaDates(
     }
 
     return items;
-  }, [mediaListResponse, columnsCount]);
+  }, [mediaResponse, columnsCount]);
 
   // Créer un index optimisé des séparateurs APRÈS avoir créé enrichedGalleryItems
   const sortedSeparatorPositions = useMemo(() => {
@@ -333,14 +333,14 @@ export function useMediaDates(
   }, [sortedSeparatorPositions]);
 
   // Utiliser le nouveau système de restauration de position
-  const { isRestoring, handleResize, restoreToPosition } = usePositionRestoration({
+  const { isRestoring, restoreToPosition } = usePositionRestoration({
     gridRef: externalGridRefRef.current,
     currentYearMonth,
     onScrollToYearMonth: scrollToYearMonth,
     persistedYearMonth,
     onUpdateYearMonth: onYearMonthChange,
     position,
-    columnsCount // Pass the columnsCount parameter
+    columnsCount
   });
 
   // Mise à jour du mois-année courant lors du défilement
@@ -457,7 +457,6 @@ export function useMediaDates(
     updateCurrentYearMonthFromScroll,
     navigateToPreviousMonth,
     navigateToNextMonth,
-    setExternalGridRef,
-    handleResize
+    setExternalGridRef
   };
 }
