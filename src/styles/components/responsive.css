@@ -63,6 +63,39 @@
     .separator-cell {
       @apply text-xs;
     }
+    
+    /* Touch scroll handle styles for mobile */
+    .touch-scroll-handle {
+      @apply fixed z-[100] w-12 rounded-full bg-primary/30 backdrop-blur-sm;
+      touch-action: none;
+      transition: opacity 0.3s ease, transform 0.1s ease, background-color 0.2s ease;
+    }
+    
+    .touch-scroll-handle-active {
+      @apply bg-primary/50;
+    }
+    
+    .touch-scroll-handle-visible {
+      opacity: 0.8;
+    }
+    
+    .touch-scroll-handle-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .touch-scroll-handle-right {
+      right: 4px;
+    }
+    
+    .touch-scroll-handle-left {
+      left: 4px;
+    }
+    
+    .touch-scroll-handle-center {
+      left: 50%;
+      transform: translateX(-50%) !important;
+    }
   }
   
   /* Mobile view mode switcher */
@@ -117,3 +150,4 @@
     width: 50% !important;
   }
 }
+

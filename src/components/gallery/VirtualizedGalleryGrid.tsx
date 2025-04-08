@@ -16,6 +16,7 @@ import { useMonthNavigation } from '@/hooks/use-month-navigation';
 import CurrentMonthBanner from './CurrentMonthBanner';
 import { useGalleryContext } from '@/contexts/GalleryContext';
 import { useIsMobile } from '@/hooks/use-media-query';
+import TouchScrollHandle from '../ui/touch-scroll-handle';
 
 interface VirtualizedGalleryGridProps {
   mediaResponse: MediaListResponse;
@@ -48,6 +49,7 @@ const VirtualizedGalleryGrid = memo(({
 }: VirtualizedGalleryGridProps) => {
   const mediaIds = mediaResponse?.mediaIds || [];
   const isMobile = useIsMobile();
+  const gridContainerRef = useRef<HTMLDivElement>(null);
   
   // Obtenir le contexte pour accéder aux fonctions de persistance
   const galleryContext = useGalleryContext();
@@ -181,8 +183,18 @@ const VirtualizedGalleryGrid = memo(({
     return `media-${item.id}`;
   }, [enrichedGalleryItems, columnsCount]);
   
+  // Détermine la position appropriée pour la poignée tactile
+  const getScrollHandlePosition = useCallback(() => {
+    if (viewMode === 'single') {
+      return 'right';
+    } else {
+      // En mode split, positionner la poignée en fonction de la galerie
+      return position === 'source' ? 'left' : 'right';
+    }
+  }, [viewMode, position]);
+  
   return (
-    <div className="w-full h-full p-2 gallery-container relative">
+    <div className="w-full h-full p-2 gallery-container relative" ref={gridContainerRef}>
       {/* Bandeau du mois courant */}
       <CurrentMonthBanner 
         currentMonth={currentYearMonthLabel}
@@ -223,6 +235,14 @@ const VirtualizedGalleryGrid = memo(({
           );
         }}
       </AutoSizer>
+      
+      {/* Poignée tactile pour faciliter le défilement sur mobile */}
+      {isMobile && effectiveGridRef && effectiveGridRef.current && (
+        <TouchScrollHandle 
+          scrollableRef={effectiveGridRef.current._outerRef} 
+          position={getScrollHandlePosition()}
+        />
+      )}
       
       {dateIndex.years.length > 0 && (
         <DateSelector

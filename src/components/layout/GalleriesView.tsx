@@ -3,6 +3,7 @@ import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { GalleryViewMode } from '@/types/gallery';
 import { useGalleryLayout } from '@/hooks/use-gallery-layout';
+import { useIsMobile } from '@/hooks/use-breakpoint';
 
 interface GalleriesViewProps {
   // Mode de vue actuel 
@@ -23,10 +24,11 @@ const GalleriesView: React.FC<GalleriesViewProps> = ({
   className = ''
 }) => {
   const { getGalleryClasses, containerClasses, isGalleryVisible } = useGalleryLayout();
+  const isMobile = useIsMobile();
 
   return (
     <div className={`${containerClasses} ${className}`}>
-      <div className="flex h-full">
+      <div className={`flex h-full ${isMobile && viewMode === 'both' ? 'mobile-gallery-dual' : ''}`}>
         {/* Left Gallery - always mounted but conditionally visible */}
         <div className={getGalleryClasses('left')}>
           {isGalleryVisible('left') && (
