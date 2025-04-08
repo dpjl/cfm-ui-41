@@ -1,10 +1,8 @@
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { GalleryViewMode } from '@/types/gallery';
 import { useGalleryLayout } from '@/hooks/use-gallery-layout';
-import { useIsMobile } from '@/hooks/use-breakpoint';
-import TouchScrollHandle from '@/components/ui/touch-scroll-handle';
 
 interface GalleriesViewProps {
   // Mode de vue actuel 
@@ -25,33 +23,16 @@ const GalleriesView: React.FC<GalleriesViewProps> = ({
   className = ''
 }) => {
   const { getGalleryClasses, containerClasses, isGalleryVisible } = useGalleryLayout();
-  const isMobile = useIsMobile();
-  
-  // Références aux éléments scrollables
-  const leftScrollRef = useRef<HTMLDivElement>(null);
-  const rightScrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className={`${containerClasses} ${className}`}>
-      <div className={`flex h-full ${isMobile && viewMode === 'both' ? 'mobile-gallery-dual' : ''}`}>
+      <div className="flex h-full">
         {/* Left Gallery - always mounted but conditionally visible */}
-        <div 
-          className={getGalleryClasses('left')} 
-          ref={leftScrollRef}
-        >
+        <div className={getGalleryClasses('left')}>
           {isGalleryVisible('left') && (
             <div className="h-full">
               {leftContent}
             </div>
-          )}
-          
-          {/* Poignée de défilement pour la galerie gauche */}
-          {isMobile && isGalleryVisible('left') && (
-            <TouchScrollHandle 
-              scrollableRef={leftScrollRef} 
-              position={viewMode === 'both' ? 'left' : 'right'} 
-              alwaysVisible={true}
-            />
           )}
         </div>
 
@@ -61,23 +42,11 @@ const GalleriesView: React.FC<GalleriesViewProps> = ({
         )}
 
         {/* Right Gallery - always mounted but conditionally visible */}
-        <div 
-          className={getGalleryClasses('right')}
-          ref={rightScrollRef}
-        >
+        <div className={getGalleryClasses('right')}>
           {isGalleryVisible('right') && (
             <div className="h-full">
               {rightContent}
             </div>
-          )}
-          
-          {/* Poignée de défilement pour la galerie droite */}
-          {isMobile && isGalleryVisible('right') && (
-            <TouchScrollHandle 
-              scrollableRef={rightScrollRef} 
-              position="right" 
-              alwaysVisible={true}
-            />
           )}
         </div>
       </div>
