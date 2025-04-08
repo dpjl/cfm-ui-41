@@ -4,7 +4,10 @@ import { useGridRenderDetection } from './use-grid-render-detection';
 import { useGridDimensionChange } from './use-grid-dimension-change';
 import type { FixedSizeGrid } from 'react-window';
 
-// Suppression de la constante RESTORATION_DELAYS car elle n'est plus nécessaire
+// Configuration des délais pour différentes opérations
+const RESTORATION_DELAYS = {
+  UNLOCK_UPDATES: 300  // Attente avant de réactiver les mises à jour
+};
 
 type PositionRestorationSource = 'grid-render' | 'initial' | 'manual' | 'dimension-change';
 
@@ -32,7 +35,8 @@ export function usePositionRestoration({
   position = 'source',
   columnsCount
 }: UsePositionRestorationProps) {
-  // Suppression de l'état isRestoring
+  // État indiquant qu'une restauration est en cours
+  const [isRestoring, setIsRestoring] = useState(false);
   
   // Référence pour stocker la dernière position connue
   const lastYearMonthRef = useRef<string | null>(null);
@@ -45,15 +49,19 @@ export function usePositionRestoration({
     source: PositionRestorationSource,
     yearMonthToRestore: string | null = null
   ) => {
-    // Vérifier uniquement si la référence de la grille est valide
-    if (!gridRef) return false;
+    // Vérifier si la référence de la grille est valide
+    if (!gridRef || isRestoring) return false;
     
-    // Prioriser yearMonthToRestore, puis currentYearMonth, puis lastYearMonthRef.current
+    // MODIFICATION: Prioriser yearMonthToRestore, puis currentYearMonth, puis lastYearMonthRef.current
+    // Cela garantit que nous utilisons toujours la position la plus récente connue
     const targetYearMonth = yearMonthToRestore || currentYearMonth || lastYearMonthRef.current;
     
     if (!targetYearMonth) return false;
     
     console.log(`[${position}] Initiating position restoration due to: ${source}`);
+    
+    // Activer l'état de restauration
+    setIsRestoring(true);
     
     // Stocker la position actuelle
     lastYearMonthRef.current = targetYearMonth;
@@ -75,13 +83,16 @@ export function usePositionRestoration({
           onUpdateYearMonth(targetYearMonth, immediate);
         }
         
-        console.log(`[${position}] Restoration complete`);
-        // Suppression du setTimeout qui réactivait les mises à jour
+        // Réactiver les mises à jour après un délai
+        setTimeout(() => {
+          setIsRestoring(false);
+          console.log(`[${position}] Restoration complete, updates re-enabled`);
+        }, RESTORATION_DELAYS.UNLOCK_UPDATES);
       }
     }
     
     return true;
-  }, [gridRef, currentYearMonth, onScrollToYearMonth, onUpdateYearMonth, position]);
+  }, [gridRef, currentYearMonth, onScrollToYearMonth, onUpdateYearMonth, position, isRestoring]);
   
   // Utiliser le hook de détection de rendu pour restaurer la position
   useGridRenderDetection(gridRef, useCallback((gridRef, mountCount) => {
@@ -96,11 +107,13 @@ export function usePositionRestoration({
   useGridDimensionChange(
     gridRef,
     useCallback((currentDimensions, prevDimensions, gridRef) => {
-      // Suppression de la vérification !isRestoring
-      console.log(`[${position}] Grid dimensions changed, restoring position`);
-      restorePosition('dimension-change');
-    }, [position, restorePosition]),
-    [] // Suppression de isRestoring des dépendances
+      if (!isRestoring) {
+        console.log(`[${position}] Grid dimensions changed, restoring position`);
+        // Pas besoin de passer currentYearMonth car il est déjà utilisé dans restorePosition
+        restorePosition('dimension-change');
+      }
+    }, [position, isRestoring, restorePosition]),
+    [isRestoring] // dépendances additionnelles
   );
   
   // Initialisation avec la position persistée
@@ -119,7 +132,7 @@ export function usePositionRestoration({
   }, [restorePosition]);
 
   return {
-    // Suppression de isRestoring de l'objet retourné
+    isRestoring,
     restoreToPosition,
     lastPosition: lastYearMonthRef.current
   };
