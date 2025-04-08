@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { GalleryViewMode } from '@/types/gallery';
 import { useGalleryLayout } from '@/hooks/use-gallery-layout';
 
-// Define container animation variants
+// Define container animation variants - mais sans transition de durée
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { 
@@ -13,7 +13,7 @@ const containerVariants = {
     transition: { 
       when: "beforeChildren",
       staggerChildren: 0.1,
-      duration: 0.3
+      duration: 0.1  // Réduit de 0.3 à 0.1 pour être beaucoup plus rapide
     }
   }
 };
@@ -43,14 +43,7 @@ const GalleriesView: React.FC<GalleriesViewProps> = ({
       <div className="flex h-full">
         {/* Left Gallery - always mounted but conditionally visible */}
         <div className={getGalleryClasses('left')}>
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate={isGalleryVisible('left') ? "visible" : "hidden"}
-            className="h-full"
-          >
-            {leftContent}
-          </motion.div>
+          {isGalleryVisible('left') && leftContent}
         </div>
 
         {/* Gallery Separator - only shown in split view */}
@@ -60,14 +53,7 @@ const GalleriesView: React.FC<GalleriesViewProps> = ({
 
         {/* Right Gallery - always mounted but conditionally visible */}
         <div className={getGalleryClasses('right')}>
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate={isGalleryVisible('right') ? "visible" : "hidden"}
-            className="h-full"
-          >
-            {rightContent}
-          </motion.div>
+          {isGalleryVisible('right') && rightContent}
         </div>
       </div>
     </div>

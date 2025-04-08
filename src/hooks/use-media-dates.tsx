@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { usePositionRestoration } from './use-position-restoration';
 import type { FixedSizeGrid } from 'react-window';
@@ -34,7 +33,8 @@ export function useMediaDates(
   columnsCount: number,
   position: 'source' | 'destination',
   persistedYearMonth?: string | null,
-  onYearMonthChange?: (yearMonth: string | null, immediate?: boolean) => void
+  onYearMonthChange?: (yearMonth: string | null, immediate?: boolean) => void,
+  isVisible: boolean = true // Nouveau paramètre pour la visibilité
 ) {
   const [currentYearMonth, setCurrentYearMonth] = useState<string | null>(null);
   const [currentYearMonthLabel, setCurrentYearMonthLabel] = useState<string | null>(null);
@@ -345,7 +345,8 @@ export function useMediaDates(
     persistedYearMonth,
     onUpdateYearMonth: onYearMonthChange,
     position,
-    columnsCount
+    columnsCount,
+    isVisible // Transmettre l'état de visibilité
   });
 
   // Mise à jour du mois-année courant lors du défilement
@@ -386,8 +387,8 @@ export function useMediaDates(
 
   // Fonction pour mettre à jour le mois courant lors d'un défilement
   const updateCurrentYearMonthFromScroll = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
-    // Ne pas mettre à jour si une restauration est en cours
-    if (isRestoring) {
+    // Ne pas mettre à jour si une restauration est en cours ou si non visible
+    if (isRestoring || !isVisible) {
       return;
     }
     
@@ -402,7 +403,7 @@ export function useMediaDates(
     if (throttledUpdateRef.current) {
       throttledUpdateRef.current(scrollTop, gridRef);
     }
-  }, [isRestoring]);
+  }, [isRestoring, isVisible]);
 
   // MODIFICATION: Naviguer au mois suivant chronologiquement (plus récent)
   const navigateToPreviousMonth = useCallback((gridRef: React.RefObject<any>) => {
