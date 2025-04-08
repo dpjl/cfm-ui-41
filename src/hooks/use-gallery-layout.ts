@@ -29,6 +29,8 @@ export function useGalleryLayout() {
   
   // Déterminer si une galerie est visible en fonction du mode d'affichage
   const isGalleryVisible = useCallback((position: 'left' | 'right') => {
+    if (!position) return false;
+    
     if (position === 'left') {
       return viewMode === 'both' || viewMode === 'left';
     } else {

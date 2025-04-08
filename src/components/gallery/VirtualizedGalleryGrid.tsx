@@ -89,6 +89,28 @@ const VirtualizedGalleryGrid: React.FC<VirtualizedGalleryGridProps> = ({
   const cellWidth = 160; // Taille de base d'une cellule
   const estimatedRowHeight = 160; // Hauteur estimée d'une rangée
   
+  // Fonction utilitaire pour ajuster le style de la cellule
+  const calculateCellStyle = (originalStyle: React.CSSProperties, columnIndex: number, isSeparator: boolean): React.CSSProperties => {
+    const isLastColumn = columnIndex === columnsCount - 1;
+    
+    if (isSeparator) {
+      // Pour les séparateurs, ajuster la largeur pour couvrir toute la rangée
+      return {
+        ...originalStyle,
+        width: `${parseFloat(originalStyle.width as string) * columnsCount}px`,
+        zIndex: 10,
+      };
+    }
+    
+    // Pour les cellules normales
+    return {
+      ...originalStyle,
+      width: `${parseFloat(originalStyle.width as string) - (isLastColumn ? 0 : gap)}px`,
+      height: `${parseFloat(originalStyle.height as string) - gap}px`,
+      padding: 0,
+    };
+  };
+  
   // Fonction pour rendre une cellule
   const renderCell = useCallback(({ columnIndex, rowIndex, style }) => {
     const index = rowIndex * columnsCount + columnIndex;
@@ -99,20 +121,28 @@ const VirtualizedGalleryGrid: React.FC<VirtualizedGalleryGridProps> = ({
     
     const item = enrichedGalleryItems[index] as GalleryItem;
     
+    // Préparer les données pour la cellule
+    const cellData = {
+      items: enrichedGalleryItems,
+      selectedIds,
+      onSelectId: (id: string, extendSelection: boolean = false) => onSelectId(id),
+      showDates: false,
+      position,
+      columnsCount,
+      gap,
+      calculateCellStyle
+    };
+    
     return (
       <GalleryGridCell
         key={item.type === 'separator' ? `sep-${item.yearMonth}` : item.id}
-        item={item}
+        columnIndex={columnIndex}
+        rowIndex={rowIndex}
         style={style}
-        columnsCount={columnsCount}
-        position={position}
-        isSelected={item.type === 'media' && selectedIds.includes(item.id)}
-        onSelect={onSelectId}
-        viewMode={viewMode}
-        gap={gap}
+        data={cellData}
       />
     );
-  }, [enrichedGalleryItems, columnsCount, selectedIds, onSelectId, position, viewMode, gap, totalItems]);
+  }, [enrichedGalleryItems, columnsCount, selectedIds, onSelectId, position, gap, totalItems]);
   
   // Rendu des éléments
   return (
