@@ -149,7 +149,7 @@ const VirtualizedGalleryGrid: React.FC<VirtualizedGalleryGridProps> = ({
     <div className="h-full relative">
       {/* Afficher le mois courant */}
       <CurrentMonthBanner
-        currentMonthLabel={currentYearMonthLabel}
+        currentMonth={currentYearMonthLabel}
         position={position}
       />
       
