@@ -12,8 +12,7 @@ export function useGalleryLayout() {
   
   // Obtenir les classes CSS pour une galerie en fonction de sa position et du mode d'affichage
   const getGalleryClasses = useCallback((position: 'left' | 'right') => {
-    // Suppression de la transition pour éviter les délais
-    const baseClasses = "h-full overflow-hidden";
+    const baseClasses = "transition-all duration-300 h-full overflow-hidden";
     
     // Classes pour la visibilité et la largeur
     if (position === 'left') {
@@ -29,8 +28,6 @@ export function useGalleryLayout() {
   
   // Déterminer si une galerie est visible en fonction du mode d'affichage
   const isGalleryVisible = useCallback((position: 'left' | 'right') => {
-    if (!position) return false;
-    
     if (position === 'left') {
       return viewMode === 'both' || viewMode === 'left';
     } else {

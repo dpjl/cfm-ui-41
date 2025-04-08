@@ -6,10 +6,10 @@ import { GalleryItem } from '@/types/gallery';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
 
 interface GalleryGridCellProps {
-  columnIndex?: number;
-  rowIndex?: number;
+  columnIndex: number;
+  rowIndex: number;
   style: React.CSSProperties;
-  data?: {
+  data: {
     items: GalleryItem[];
     selectedIds: string[];
     onSelectId: (id: string, extendSelection: boolean) => void;
@@ -25,12 +25,7 @@ interface GalleryGridCellProps {
  * A cell component for the virtualized grid that renders a media item or separator
  * With improved positioning calculations
  */
-const GalleryGridCell = memo(({ columnIndex = 0, rowIndex = 0, style, data }: GalleryGridCellProps) => {
-  // Si data est undefined, rendre une cellule vide
-  if (!data) {
-    return <div style={style} className="empty-cell" aria-hidden="true" />;
-  }
-  
+const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGridCellProps) => {
   // Calculate the index in the flat array based on row and column
   const index = rowIndex * data.columnsCount + columnIndex;
   const isSmallScreen = !useBreakpoint('sm');

@@ -1,5 +1,5 @@
 
-import { useRef, useState, useCallback, useLayoutEffect, useEffect } from 'react';
+import { useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { useGridRenderDetection } from './use-grid-render-detection';
 import { useGridDimensionChange } from './use-grid-dimension-change';
 import type { FixedSizeGrid } from 'react-window';
@@ -9,7 +9,7 @@ const RESTORATION_DELAYS = {
   UNLOCK_UPDATES: 300  // Attente avant de réactiver les mises à jour
 };
 
-type PositionRestorationSource = 'grid-render' | 'initial' | 'manual' | 'dimension-change' | 'visibility-change';
+type PositionRestorationSource = 'grid-render' | 'initial' | 'manual' | 'dimension-change';
 
 interface UsePositionRestorationProps {
   gridRef: React.RefObject<FixedSizeGrid> | null;
@@ -19,7 +19,6 @@ interface UsePositionRestorationProps {
   onUpdateYearMonth?: (yearMonth: string | null, immediate?: boolean) => void;
   position?: 'source' | 'destination';
   columnsCount?: number;
-  isVisible?: boolean; // Nouveau paramètre pour la visibilité
 }
 
 /**
@@ -34,8 +33,7 @@ export function usePositionRestoration({
   persistedYearMonth,
   onUpdateYearMonth,
   position = 'source',
-  columnsCount,
-  isVisible = true // Par défaut considéré comme visible
+  columnsCount
 }: UsePositionRestorationProps) {
   // État indiquant qu'une restauration est en cours
   const [isRestoring, setIsRestoring] = useState(false);
@@ -46,9 +44,6 @@ export function usePositionRestoration({
   // Référence pour indiquer si l'initialisation a déjà eu lieu
   const hasInitializedRef = useRef<boolean>(false);
   
-  // Référence pour suivre l'état de visibilité précédent
-  const wasVisibleRef = useRef<boolean>(isVisible);
-  
   // Fonction centrale pour restaurer la position
   const restorePosition = useCallback((
     source: PositionRestorationSource,
@@ -56,12 +51,6 @@ export function usePositionRestoration({
   ) => {
     // Vérifier si la référence de la grille est valide
     if (!gridRef) return false;
-    
-    // Vérifier si la grille est visible (sauf pour les restaurations manuelles)
-    if (source !== 'manual' && !isVisible) {
-      console.log(`[${position}] Skipping restoration due to invisibility`);
-      return false;
-    }
     
     // MODIFICATION: Prioriser yearMonthToRestore, puis currentYearMonth, puis lastYearMonthRef.current
     // Cela garantit que nous utilisons toujours la position la plus récente connue
@@ -89,8 +78,8 @@ export function usePositionRestoration({
         
         // Signaler la mise à jour du mois courant au parent si nécessaire
         if (onUpdateYearMonth) {
-          // Mise à jour immédiate pour les actions manuelles ou les changements de visibilité
-          const immediate = source === 'manual' || source === 'visibility-change';
+          // Mise à jour immédiate pour les actions manuelles
+          const immediate = source === 'manual';
           onUpdateYearMonth(targetYearMonth, immediate);
         }
         
@@ -103,55 +92,39 @@ export function usePositionRestoration({
     }
     
     return true;
-  }, [gridRef, currentYearMonth, onScrollToYearMonth, onUpdateYearMonth, position, isVisible]);
+  }, [gridRef, currentYearMonth, onScrollToYearMonth, onUpdateYearMonth, position, isRestoring]);
   
   // Utiliser le hook de détection de rendu pour restaurer la position
   useGridRenderDetection(gridRef, useCallback((gridRef, mountCount) => {
     // Ne pas restaurer lors du tout premier rendu si nous avons une valeur persistée
     // (elle sera gérée par l'effet d'initialisation)
-    if (isVisible && (mountCount > 1 || !persistedYearMonth)) {
+    if (mountCount > 1 || !persistedYearMonth) {
       restorePosition('grid-render');
     }
-  }, [restorePosition, persistedYearMonth, isVisible]));
+  }, [restorePosition, persistedYearMonth]));
   
   // Utiliser le hook de détection de changement de dimensions
   useGridDimensionChange(
     gridRef,
     useCallback((currentDimensions, prevDimensions, gridRef) => {
-      if (isVisible) {
+      //if (!isRestoring) {
         console.log(`[${position}] Grid dimensions changed, restoring position`);
+        // Pas besoin de passer currentYearMonth car il est déjà utilisé dans restorePosition
         restorePosition('dimension-change');
-      }
-    }, [position, isVisible, restorePosition]),
-    [isVisible] // dépendances additionnelles
+      //}
+    }, [position, isRestoring, restorePosition]),
+    [isRestoring] // dépendances additionnelles
   );
   
   // Initialisation avec la position persistée
   useLayoutEffect(() => {
     // Vérifier si gridRef existe avant d'accéder à sa propriété current
-    if (isVisible && persistedYearMonth && !hasInitializedRef.current && gridRef) {
+    if (persistedYearMonth && !hasInitializedRef.current && gridRef) {
       hasInitializedRef.current = true;
       console.log(`[${position}] Initializing with persisted position: ${persistedYearMonth}`);
       restorePosition('initial', persistedYearMonth);
     }
-  }, [persistedYearMonth, gridRef, position, restorePosition, isVisible]);
-  
-  // NOUVEAU: effet pour gérer les changements de visibilité
-  useEffect(() => {
-    // Si la galerie devient visible alors qu'elle ne l'était pas avant
-    if (isVisible && !wasVisibleRef.current) {
-      console.log(`[${position}] Visibility changed to visible, triggering restoration`);
-      // Une légère attente pour s'assurer que le composant est complètement monté
-      const timeoutId = setTimeout(() => {
-        restorePosition('visibility-change');
-      }, 50);
-      
-      return () => clearTimeout(timeoutId);
-    }
-    
-    // Mettre à jour la référence de visibilité
-    wasVisibleRef.current = isVisible;
-  }, [isVisible, position, restorePosition]);
+  }, [persistedYearMonth, gridRef, position, restorePosition]);
   
   // Fonction pour forcer une restauration manuelle à une position spécifique
   const restoreToPosition = useCallback((yearMonth: string) => {
