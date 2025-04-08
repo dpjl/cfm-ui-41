@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { usePositionRestoration } from './use-position-restoration';
 import type { FixedSizeGrid } from 'react-window';
@@ -338,7 +337,9 @@ export function useMediaDates(
   }, [sortedSeparatorPositions]);
 
   // Utiliser le nouveau système de restauration de position
-  const { isRestoring, restoreToPosition } = usePositionRestoration({
+  const { 
+    restoreToPosition 
+  } = usePositionRestoration({
     gridRef: externalGridRefRef.current,
     currentYearMonth,
     onScrollToYearMonth: scrollToYearMonth,
@@ -355,12 +356,6 @@ export function useMediaDates(
     
     // Créer une nouvelle fonction throttle avec les dépendances à jour
     throttledUpdateRef.current = throttle((scrollTop: number, gridRef: React.RefObject<any>) => {
-      // Ne pas mettre à jour si une restauration est en cours
-      if (isRestoring) {
-        console.log(`[${position}] Scroll update skipped: restoration in progress`);
-        return;
-      }
-      
       // Obtenir le nouveau mois-année
       const newYearMonth = getYearMonthFromScrollPosition(scrollTop, gridRef);
       
@@ -382,15 +377,10 @@ export function useMediaDates(
         oldThrottledUpdate.cancel();
       }
     };
-  }, [getYearMonthFromScrollPosition, currentYearMonth, isRestoring, position, onYearMonthChange]);
+  }, [getYearMonthFromScrollPosition, currentYearMonth, position, onYearMonthChange]);
 
   // Fonction pour mettre à jour le mois courant lors d'un défilement
   const updateCurrentYearMonthFromScroll = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
-    // Ne pas mettre à jour si une restauration est en cours
-    if (isRestoring) {
-      return;
-    }
-    
     // Sauvegarder la référence externe de la grille pour les repositionnements futurs
     if (gridRef && !externalGridRefRef.current) {
       externalGridRefRef.current = gridRef;
@@ -402,7 +392,7 @@ export function useMediaDates(
     if (throttledUpdateRef.current) {
       throttledUpdateRef.current(scrollTop, gridRef);
     }
-  }, [isRestoring]);
+  }, [position]);
 
   // MODIFICATION: Naviguer au mois suivant chronologiquement (plus récent)
   const navigateToPreviousMonth = useCallback((gridRef: React.RefObject<any>) => {
