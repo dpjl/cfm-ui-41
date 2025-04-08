@@ -1,5 +1,5 @@
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { FixedSizeGrid } from 'react-window';
 
 export function useGalleryGrid() {

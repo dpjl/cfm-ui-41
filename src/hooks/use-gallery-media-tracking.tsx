@@ -1,11 +1,12 @@
 
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { FixedSizeGrid } from 'react-window';
 import { MediaListResponse } from '@/types/gallery';
 
 /**
  * Hook pour gérer le suivi des médias dans la galerie et leur affichage
  * Optimisé pour éviter les réinitialisations inutiles du défilement
+ * Maintenant avec useLayoutEffect pour une meilleure synchronisation
  */
 export function useGalleryMediaTracking(
   mediaResponse: MediaListResponse | undefined, 
@@ -16,7 +17,7 @@ export function useGalleryMediaTracking(
   const hasInitializedFromPersistedValueRef = useRef<boolean>(false);
   
   // Détecter uniquement les changements importants dans les médias
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!mediaResponse || hasInitializedFromPersistedValueRef.current) return;
     
     const mediaIds = mediaResponse.mediaIds;
