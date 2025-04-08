@@ -39,7 +39,7 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
     }
     
     const ratio = viewHeight / totalHeight;
-    const handleHeight = Math.max(50, Math.floor(viewHeight * ratio)); 
+    const handleHeight = Math.max(100, Math.floor(viewHeight * ratio)); // Augmenté la taille minimale à 100px
     const maxScrollTop = totalHeight - viewHeight;
     const scrollPercentage = container.scrollTop / maxScrollTop;
     const handleTop = scrollPercentage * (viewHeight - handleHeight);
@@ -88,7 +88,10 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
     resizeObserver.observe(container);
     
     // Initialisation
-    updateHandlePosition();
+    // Délai pour s'assurer que le conteneur est complètement rendu
+    setTimeout(() => {
+      updateHandlePosition();
+    }, 100);
     
     return () => {
       container.removeEventListener('scroll', handleScroll);
@@ -174,6 +177,20 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
   // Ne pas rendre sur desktop
   if (!isMobile) return null;
   
+  // Style forcé pour s'assurer que la position est toujours fixe
+  const forceFixedStyle: React.CSSProperties = {
+    position: 'fixed',
+    height: '100px', // Taille par défaut minimale
+    zIndex: 100,
+    opacity: isVisible || alwaysVisible ? 0.9 : 0,
+    pointerEvents: isVisible || isDragging || alwaysVisible ? 'auto' : 'none',
+    top: '50%', // Positionne au milieu de l'écran par défaut
+    transform: 'translateY(-50%)', // Centre verticalement
+    ...(position === 'right' ? { right: '6px' } : {}),
+    ...(position === 'left' ? { left: '6px' } : {}),
+    ...(position === 'center' ? { left: '50%', transform: 'translate(-50%, -50%)' } : {})
+  };
+  
   return (
     <div 
       ref={handleRef}
@@ -189,7 +206,10 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
       onTouchStart={handleTouchStart}
       aria-hidden="true" // Dissimulé pour les lecteurs d'écran
       data-handle-position={position}
-      style={{ opacity: alwaysVisible ? 0.8 : undefined }}
+      style={{
+        ...forceFixedStyle,
+        backgroundColor: isDragging ? 'rgba(var(--primary), 0.6)' : 'rgba(var(--primary), 0.4)'
+      }}
     />
   );
 };

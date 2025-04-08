@@ -66,10 +66,12 @@
     
     /* Touch scroll handle styles for mobile */
     .touch-scroll-handle {
-      @apply fixed z-[100] w-12 rounded-full bg-primary/40 backdrop-blur-sm;
+      @apply w-12 rounded-full backdrop-blur-sm;
       touch-action: none;
       height: 100px; /* Taille par défaut */
       transition: opacity 0.3s ease, transform 0.1s ease, background-color 0.2s ease;
+      position: fixed !important; /* Force position fixed */
+      z-index: 100 !important; /* Force z-index élevé */
     }
     
     .touch-scroll-handle-active {
@@ -77,7 +79,7 @@
     }
     
     .touch-scroll-handle-visible {
-      opacity: 0.9;
+      opacity: 0.9 !important;
     }
     
     .touch-scroll-handle-hidden {
@@ -86,15 +88,15 @@
     }
     
     .touch-scroll-handle-right {
-      right: 6px;
+      right: 6px !important;
     }
     
     .touch-scroll-handle-left {
-      left: 6px;
+      left: 6px !important;
     }
     
     .touch-scroll-handle-center {
-      left: 50%;
+      left: 50% !important;
       transform: translateX(-50%) !important;
     }
   }
