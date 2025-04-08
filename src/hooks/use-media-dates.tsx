@@ -1,7 +1,12 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { usePositionRestoration } from './use-position-restoration';
 import type { FixedSizeGrid } from 'react-window';
-import { MediaListResponse, EnrichedGalleryItem } from '@/types/gallery';
+import { MediaListResponse, GalleryItem } from '@/types/gallery';
+import { throttle } from 'lodash';
+
+// On utilise GalleryItem au lieu de EnrichedGalleryItem qui n'existe pas
+type EnrichedGalleryItem = GalleryItem;
 
 interface MediaDateIndex {
   // Maps ID to date
