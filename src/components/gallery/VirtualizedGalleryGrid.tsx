@@ -1,4 +1,3 @@
-
 import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -15,7 +14,7 @@ import {
 import { useMonthNavigation } from '@/hooks/use-month-navigation';
 import CurrentMonthBanner from './CurrentMonthBanner';
 import { useGalleryContext } from '@/contexts/GalleryContext';
-import { useIsMobile } from '@/hooks/use-media-query';
+import { useIsMobile } from '@/hooks/use-breakpoint';
 import TouchScrollHandle from '../ui/touch-scroll-handle';
 
 interface VirtualizedGalleryGridProps {
@@ -51,10 +50,8 @@ const VirtualizedGalleryGrid = memo(({
   const isMobile = useIsMobile();
   const gridContainerRef = useRef<HTMLDivElement>(null);
   
-  // Obtenir le contexte pour accéder aux fonctions de persistance
   const galleryContext = useGalleryContext();
   
-  // Déterminer la position et récupérer les valeurs et fonctions appropriées
   const persistedYearMonth = position === 'source' 
     ? galleryContext.sourceYearMonth 
     : galleryContext.destYearMonth;
@@ -68,7 +65,6 @@ const VirtualizedGalleryGrid = memo(({
     gridKey,
   } = useGalleryGrid();
   
-  // Utiliser le gridRef externe s'il est fourni, sinon utiliser l'interne
   const effectiveGridRef = externalGridRef || internalGridRef;
   
   const { 
@@ -89,7 +85,6 @@ const VirtualizedGalleryGrid = memo(({
     updateYearMonth
   );
   
-  // Passer la référence de la grille au hook useMediaDates
   useEffect(() => {
     if (setExternalGridRef && effectiveGridRef) {
       setExternalGridRef(effectiveGridRef);
@@ -98,7 +93,6 @@ const VirtualizedGalleryGrid = memo(({
   
   useGalleryMediaTracking(mediaResponse, effectiveGridRef);
   
-  // Handlers pour la navigation mensuelle
   const handlePrevMonth = useCallback(() => {
     return navigateToPreviousMonth(effectiveGridRef);
   }, [navigateToPreviousMonth, effectiveGridRef]);
@@ -107,13 +101,11 @@ const VirtualizedGalleryGrid = memo(({
     return navigateToNextMonth(effectiveGridRef);
   }, [navigateToNextMonth, effectiveGridRef]);
   
-  // Utiliser le hook de navigation mensuelle pour les raccourcis clavier
   useMonthNavigation({
     navigateToPreviousMonth: handlePrevMonth,
     navigateToNextMonth: handleNextMonth
   });
   
-  // Passer les fonctions de navigation au composant parent si nécessaire
   useEffect(() => {
     if (onSetNavigationFunctions) {
       onSetNavigationFunctions(handlePrevMonth, handleNextMonth);
@@ -124,7 +116,6 @@ const VirtualizedGalleryGrid = memo(({
   
   const handleSelectYearMonth = useCallback((year: number, month: number) => {
     scrollToYearMonth(year, month, effectiveGridRef);
-    // Note: La persistance est gérée dans le hook useMediaDates
   }, [scrollToYearMonth, effectiveGridRef]);
   
   const rowCount = useMemo(() => {
@@ -136,7 +127,6 @@ const VirtualizedGalleryGrid = memo(({
     columnIndex: number,
     isSeparator: boolean
   ): React.CSSProperties => {
-    // Base style adjustments
     const baseStyle = {
       ...originalStyle,
       width: `${parseFloat(originalStyle.width as string) - gap}px`,
@@ -145,7 +135,6 @@ const VirtualizedGalleryGrid = memo(({
       paddingBottom: gap,
     };
     
-    // Pour les séparateurs, étendre sur toute la largeur si nécessaire
     if (isSeparator) {
       return baseStyle;
     }
@@ -153,9 +142,7 @@ const VirtualizedGalleryGrid = memo(({
     return baseStyle;
   }, [gap]);
   
-  // Gestionnaire de défilement pour mettre à jour le mois courant
   const handleScroll = useCallback(({ scrollTop }: { scrollTop: number }) => {
-    // Mettre à jour le mois courant
     updateCurrentYearMonthFromScroll(scrollTop, effectiveGridRef);
   }, [updateCurrentYearMonthFromScroll, effectiveGridRef]);
   
@@ -183,19 +170,16 @@ const VirtualizedGalleryGrid = memo(({
     return `media-${item.id}`;
   }, [enrichedGalleryItems, columnsCount]);
   
-  // Détermine la position appropriée pour la poignée tactile
   const getScrollHandlePosition = useCallback(() => {
     if (viewMode === 'single') {
       return 'right';
     } else {
-      // En mode split, positionner la poignée en fonction de la galerie
       return position === 'source' ? 'left' : 'right';
     }
   }, [viewMode, position]);
   
   return (
     <div className="w-full h-full p-2 gallery-container relative" ref={gridContainerRef}>
-      {/* Bandeau du mois courant */}
       <CurrentMonthBanner 
         currentMonth={currentYearMonthLabel}
         position={position}
@@ -236,14 +220,6 @@ const VirtualizedGalleryGrid = memo(({
         }}
       </AutoSizer>
       
-      {/* Poignée tactile pour faciliter le défilement sur mobile */}
-      {isMobile && effectiveGridRef && effectiveGridRef.current && (
-        <TouchScrollHandle 
-          scrollableRef={effectiveGridRef.current._outerRef} 
-          position={getScrollHandlePosition()}
-        />
-      )}
-      
       {dateIndex.years.length > 0 && (
         <DateSelector
           years={dateIndex.years}
@@ -258,7 +234,6 @@ const VirtualizedGalleryGrid = memo(({
 
 VirtualizedGalleryGrid.displayName = 'VirtualizedGalleryGrid';
 
-// Exposer les nouveaux hooks pour la navigation mensuelle
 export { useMonthNavigation };
 
 export default VirtualizedGalleryGrid;

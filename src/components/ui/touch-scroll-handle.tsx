@@ -7,17 +7,19 @@ interface TouchScrollHandleProps {
   scrollableRef: React.RefObject<HTMLElement>;
   position?: 'left' | 'right' | 'center';
   className?: string;
+  alwaysVisible?: boolean;
 }
 
 const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
   scrollableRef,
   position = 'right',
-  className
+  className,
+  alwaysVisible = false
 }) => {
   const isMobile = useIsMobile();
   const handleRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(alwaysVisible);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [scrollRatio, setScrollRatio] = useState(1);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -32,7 +34,7 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
     
     // Ne rien faire si le contenu ne nécessite pas de défilement
     if (totalHeight <= viewHeight) {
-      setIsVisible(false);
+      if (!alwaysVisible) setIsVisible(false);
       return;
     }
     
@@ -50,13 +52,26 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
     setScrollRatio(ratio);
     setScrollPosition(scrollPercentage);
     setIsVisible(true);
-  }, [scrollableRef]);
+
+    // Pour le débogage
+    console.log("Handle updated", { 
+      ratio, 
+      handleHeight, 
+      handleTop,
+      isVisible: true,
+      position
+    });
+  }, [scrollableRef, alwaysVisible, position]);
   
   // Gestion du défilement
   useEffect(() => {
-    if (!isMobile || !scrollableRef.current) return;
+    if (!isMobile || !scrollableRef.current) {
+      console.log("Mobile detection or scrollable ref issue", { isMobile, hasRef: !!scrollableRef.current });
+      return;
+    }
     
     const container = scrollableRef.current;
+    console.log("Touch scroll handle mounted for", position, container);
     
     const handleScroll = () => {
       updateHandlePosition();
@@ -82,7 +97,7 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [isMobile, scrollableRef, updateHandlePosition]);
+  }, [isMobile, scrollableRef, updateHandlePosition, position]);
   
   // Affiche le handle temporairement lors du défilement
   const showHandleTemporarily = useCallback(() => {
@@ -92,18 +107,19 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
     
     setIsVisible(true);
     
-    // Cacher après un délai sauf si en cours de glissement
-    if (!isDragging) {
+    // Cacher après un délai sauf si en cours de glissement ou alwaysVisible
+    if (!isDragging && !alwaysVisible) {
       timeoutRef.current = setTimeout(() => {
         setIsVisible(false);
-      }, 1500); // Disparaît après 1.5s d'inactivité
+      }, 2500); // Augmenter à 2.5s
     }
-  }, [isDragging]);
+  }, [isDragging, alwaysVisible]);
   
   // Gestionnaires d'événements tactiles
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.stopPropagation();
     setIsDragging(true);
+    console.log("Touch start on handle");
     
     // Position initiale du toucher
     const touch = e.touches[0];
@@ -155,7 +171,7 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
     document.addEventListener('touchcancel', handleTouchEnd);
   }, [scrollableRef, scrollRatio, updateHandlePosition, showHandleTemporarily]);
   
-  // Ne pas rendre sur desktop ou si non visible
+  // Ne pas rendre sur desktop
   if (!isMobile) return null;
   
   return (
@@ -172,6 +188,8 @@ const TouchScrollHandle: React.FC<TouchScrollHandleProps> = ({
       )}
       onTouchStart={handleTouchStart}
       aria-hidden="true" // Dissimulé pour les lecteurs d'écran
+      data-handle-position={position}
+      style={{ opacity: alwaysVisible ? 0.8 : undefined }}
     />
   );
 };

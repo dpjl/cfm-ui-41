@@ -46,7 +46,7 @@ export function useBreakpoint(breakpoint: Breakpoint) {
   return isAboveBreakpoint;
 }
 
-// IMPORTANT: cette fonction retourne "true" pour mobile, ce qui est l'inverse de celle dans use-media-query.ts
+// Uniformiser le comportement avec use-media-query.ts
 export function useIsMobile() {
   return !useBreakpoint('md'); // Consider anything below 'md' (768px) as mobile
 }
