@@ -107,11 +107,11 @@ export function usePositionRestoration({
   useGridDimensionChange(
     gridRef,
     useCallback((currentDimensions, prevDimensions, gridRef) => {
-      if (!isRestoring) {
+      //if (!isRestoring) {
         console.log(`[${position}] Grid dimensions changed, restoring position`);
         // Pas besoin de passer currentYearMonth car il est déjà utilisé dans restorePosition
         restorePosition('dimension-change');
-      }
+      //}
     }, [position, isRestoring, restorePosition]),
     [isRestoring] // dépendances additionnelles
   );
