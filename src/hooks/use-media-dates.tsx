@@ -333,14 +333,14 @@ export function useMediaDates(
   }, [sortedSeparatorPositions]);
 
   // Utiliser le nouveau système de restauration de position
-  const { isRestoring, handleResize } = usePositionRestoration({
+  const { isRestoring, handleResize, restoreToPosition } = usePositionRestoration({
     gridRef: externalGridRefRef.current,
     currentYearMonth,
     onScrollToYearMonth: scrollToYearMonth,
     persistedYearMonth,
     onUpdateYearMonth: onYearMonthChange,
-    columnsCount,
-    position
+    position,
+    columnsCount // Pass the columnsCount parameter
   });
 
   // Mise à jour du mois-année courant lors du défilement

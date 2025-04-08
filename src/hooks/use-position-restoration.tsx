@@ -17,6 +17,7 @@ interface UsePositionRestorationProps {
   persistedYearMonth?: string | null;
   onUpdateYearMonth?: (yearMonth: string | null, immediate?: boolean) => void;
   position?: 'source' | 'destination';
+  columnsCount?: number; // Added to fix the error
 }
 
 /**
@@ -30,7 +31,8 @@ export function usePositionRestoration({
   onScrollToYearMonth,
   persistedYearMonth,
   onUpdateYearMonth,
-  position = 'source'
+  position = 'source',
+  columnsCount
 }: UsePositionRestorationProps) {
   // État indiquant qu'une restauration est en cours
   const [isRestoring, setIsRestoring] = useState(false);
@@ -114,9 +116,18 @@ export function usePositionRestoration({
     return restorePosition('manual', yearMonth);
   }, [restorePosition]);
 
+  // Add handleResize function to handle grid size changes
+  const handleResize = useCallback(() => {
+    if (lastYearMonthRef.current && !isRestoring) {
+      console.log(`[${position}] Grid resize detected, restoring position`);
+      restorePosition('grid-render');
+    }
+  }, [position, isRestoring, restorePosition]);
+
   return {
     isRestoring,
     restoreToPosition,
-    lastPosition: lastYearMonthRef.current
+    lastPosition: lastYearMonthRef.current,
+    handleResize // Add this property to fix the error
   };
 }
