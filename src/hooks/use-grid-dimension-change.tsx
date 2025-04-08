@@ -1,5 +1,6 @@
 
-import { useRef, useLayoutEffect } from 'react';
+import { useRef, useLayoutEffect, useCallback, useMemo } from 'react';
+import { debounce } from 'lodash';
 import type { FixedSizeGrid } from 'react-window';
 
 interface GridDimensions {
@@ -11,6 +12,7 @@ interface GridDimensions {
 /**
  * Hook qui détecte les changements de dimensions d'une grille
  * et appelle un callback lorsque ces dimensions changent
+ * Optimisé avec debounce pour éviter les appels trop fréquents
  */
 export function useGridDimensionChange(
   gridRef: React.RefObject<FixedSizeGrid> | null,
@@ -24,8 +26,8 @@ export function useGridDimensionChange(
   // Référence pour stocker les dimensions précédentes
   const prevDimensionsRef = useRef<GridDimensions | null>(null);
   
-  // Utiliser useLayoutEffect pour garantir une exécution synchrone
-  useLayoutEffect(() => {
+  // Fonction pour vérifier et comparer les dimensions
+  const checkDimensions = useCallback(() => {
     if (!gridRef?.current) return;
     
     const grid = gridRef.current;
@@ -63,6 +65,33 @@ export function useGridDimensionChange(
       // Mettre à jour les dimensions précédentes
       prevDimensionsRef.current = currentDimensions;
     }
-  // Inclure les dépendances additionnelles
-  }, [gridRef, onDimensionChange, ...dependencies]);
+  }, [gridRef, onDimensionChange]);
+  
+  // Créer une version debounced de la fonction de vérification
+  const debouncedCheckDimensions = useMemo(
+    () => debounce(checkDimensions, 150), // 150ms donne un bon équilibre entre réactivité et performance
+    [checkDimensions]
+  );
+  
+  // Utiliser useLayoutEffect pour observer les changements de dimensions
+  useLayoutEffect(() => {
+    if (!gridRef?.current) return;
+    
+    // Vérifier les dimensions au montage initial
+    checkDimensions();
+    
+    // Observer les changements de l'élément DOM de la grille
+    const gridElement = gridRef.current._outerRef;
+    if (!gridElement) return;
+    
+    // Utiliser ResizeObserver pour détecter les changements de taille du conteneur de la grille
+    const resizeObserver = new ResizeObserver(debouncedCheckDimensions);
+    resizeObserver.observe(gridElement);
+    
+    // Nettoyer les ressources lors du démontage
+    return () => {
+      resizeObserver.disconnect();
+      debouncedCheckDimensions.cancel(); // Important: annuler le debounce en attente
+    };
+  }, [gridRef, checkDimensions, debouncedCheckDimensions, ...dependencies]);
 }
