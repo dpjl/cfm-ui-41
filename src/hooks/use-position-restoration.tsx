@@ -50,7 +50,7 @@ export function usePositionRestoration({
     yearMonthToRestore: string | null = null
   ) => {
     // Vérifier si la référence de la grille est valide
-    if (!gridRef || isRestoring) return false;
+    if (!gridRef) return false;
     
     // MODIFICATION: Prioriser yearMonthToRestore, puis currentYearMonth, puis lastYearMonthRef.current
     // Cela garantit que nous utilisons toujours la position la plus récente connue
