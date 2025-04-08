@@ -52,8 +52,9 @@ export function usePositionRestoration({
     // Vérifier si la référence de la grille est valide
     if (!gridRef || isRestoring) return false;
     
-    // Utiliser la position fournie, ou la dernière connue, ou la position actuelle
-    const targetYearMonth = yearMonthToRestore || lastYearMonthRef.current || currentYearMonth;
+    // MODIFICATION: Prioriser yearMonthToRestore, puis currentYearMonth, puis lastYearMonthRef.current
+    // Cela garantit que nous utilisons toujours la position la plus récente connue
+    const targetYearMonth = yearMonthToRestore || currentYearMonth || lastYearMonthRef.current;
     
     if (!targetYearMonth) return false;
     
@@ -106,8 +107,9 @@ export function usePositionRestoration({
   useGridDimensionChange(
     gridRef,
     useCallback((currentDimensions, prevDimensions, gridRef) => {
-      if (lastYearMonthRef.current && !isRestoring) {
+      if (!isRestoring) {
         console.log(`[${position}] Grid dimensions changed, restoring position`);
+        // Pas besoin de passer currentYearMonth car il est déjà utilisé dans restorePosition
         restorePosition('dimension-change');
       }
     }, [position, isRestoring, restorePosition]),
