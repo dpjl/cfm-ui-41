@@ -3,8 +3,8 @@ import { useEffect, useCallback } from 'react';
 import { useIsMobile } from './use-breakpoint';
 
 /**
- * Hook qui calcule et met à jour la hauteur réelle du viewport sur les appareils mobiles
- * Cette approche résout les problèmes de hauteur inconsistante sur les navigateurs mobiles
+ * Hook qui calcule et met à jour la hauteur réelle du viewport sur tous les appareils
+ * Cette approche résout les problèmes de hauteur inconsistante sur les navigateurs
  * notamment lors de l'apparition/disparition des barres d'UI
  */
 export function useViewportHeight() {
@@ -24,8 +24,7 @@ export function useViewportHeight() {
   }, []);
 
   useEffect(() => {
-    // Ne s'applique que sur mobile
-    if (!isMobile) return;
+    // Suppression de la condition isMobile pour appliquer sur tous les appareils
     
     // Appliquer initialement
     updateViewportHeight();
@@ -35,16 +34,20 @@ export function useViewportHeight() {
     window.addEventListener('orientationchange', updateViewportHeight);
     
     // Écouteur spécifique pour iOS - déclenché lors du défilement
-    window.addEventListener('scroll', updateViewportHeight, { passive: true });
+    if (isMobile) {
+      window.addEventListener('scroll', updateViewportHeight, { passive: true });
+    }
     
-    // Appliquer après un court délai pour gérer certains cas spécifiques sur iOS
+    // Appliquer après un court délai pour gérer certains cas spécifiques
     const timeoutId = setTimeout(updateViewportHeight, 300);
     
     // Nettoyage
     return () => {
       window.removeEventListener('resize', updateViewportHeight);
       window.removeEventListener('orientationchange', updateViewportHeight);
-      window.removeEventListener('scroll', updateViewportHeight);
+      if (isMobile) {
+        window.removeEventListener('scroll', updateViewportHeight);
+      }
       clearTimeout(timeoutId);
     };
   }, [isMobile, updateViewportHeight]);
