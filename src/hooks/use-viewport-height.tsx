@@ -41,14 +41,26 @@ export function useViewportHeight() {
     // Appliquer après un court délai pour gérer certains cas spécifiques
     const timeoutId = setTimeout(updateViewportHeight, 300);
     
+    // Appliquer également lors de l'interaction avec la page
+    window.addEventListener('touchstart', updateViewportHeight, { passive: true });
+    window.addEventListener('click', updateViewportHeight, { passive: true });
+    
     // Nettoyage
     return () => {
       window.removeEventListener('resize', updateViewportHeight);
       window.removeEventListener('orientationchange', updateViewportHeight);
+      window.removeEventListener('touchstart', updateViewportHeight);
+      window.removeEventListener('click', updateViewportHeight);
       if (isMobile) {
         window.removeEventListener('scroll', updateViewportHeight);
       }
       clearTimeout(timeoutId);
     };
   }, [isMobile, updateViewportHeight]);
+
+  // Exécuter immédiatement lors de l'invocation du hook
+  useEffect(() => {
+    // Force une mise à jour initiale
+    updateViewportHeight();
+  }, [updateViewportHeight]);
 }

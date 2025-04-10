@@ -5,22 +5,22 @@
 @layer utilities {
   /* Classe pour appliquer la hauteur réelle du viewport calculée par JS */
   .h-viewport-safe {
-    height: 100vh; /* Fallback */
-    height: calc(var(--real-vh, 1vh) * 100);
+    height: 100vh !important; /* Fallback */
+    height: calc(var(--real-vh, 1vh) * 100) !important;
   }
   
   /* Variante avec déduction de la hauteur d'en-tête */
   .h-viewport-safe-minus-header {
-    height: calc(100vh - 3.5rem); /* Fallback */
-    height: calc((var(--real-vh, 1vh) * 100) - 3.5rem);
+    height: calc(100vh - 3.5rem) !important; /* Fallback */
+    height: calc((var(--real-vh, 1vh) * 100) - 3.5rem) !important;
   }
   
   /* Style pour conteneurs flexibles avec hauteur de viewport adaptative */
   .flex-viewport-container {
     display: flex;
     flex-direction: column;
-    height: 100vh; /* Fallback */
-    height: calc(var(--real-vh, 1vh) * 100);
+    height: 100vh !important; /* Fallback */
+    height: calc(var(--real-vh, 1vh) * 100) !important;
     overflow: hidden;
   }
 }

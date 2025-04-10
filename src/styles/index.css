@@ -22,3 +22,8 @@
 .mobile-view-transition {
   transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
+
+/* Force déclaration des variables de viewport pour tous les écrans */
+:root {
+  --real-vh: 1vh;
+}
