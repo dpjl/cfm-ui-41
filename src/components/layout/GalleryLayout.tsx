@@ -1,4 +1,3 @@
-
 import React from 'react';
 import SidePanel from '@/components/layout/SidePanel';
 import GalleriesContainer from '@/components/layout/GalleriesContainer';
@@ -90,7 +89,7 @@ const GalleryLayout: React.FC = () => {
   };
   
   return (
-    <div className="flex h-viewport-safe overflow-hidden mt-2 relative">
+    <div className="flex h-viewport-safe overflow-hidden mt-2 relative" style={{height: 'calc(var(--real-vh, 1vh) * 100)'}}> 
       <SidePanel 
         position="left" 
         isOpen={leftPanelOpen} 

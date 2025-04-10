@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { LanguageProvider } from '@/hooks/use-language';
 import ServerStatusPanel from '@/components/ServerStatusPanel';
 import GalleryLayout from '@/components/layout/GalleryLayout';
@@ -10,6 +10,22 @@ const Index = () => {
   const galleryState = useGalleryContext();
   
   const isSidebarOpen = galleryState.leftPanelOpen || galleryState.rightPanelOpen;
+
+  // Force un rafraîchissement du layout après le montage
+  useEffect(() => {
+    const handleResize = () => {
+      // Force un redimensionnement pour s'assurer que tous les calculs sont à jour
+      window.dispatchEvent(new Event('resize'));
+    };
+    
+    // Exécuter après le montage
+    handleResize();
+    
+    // Et aussi après un court délai pour s'assurer que le DOM est complètement chargé
+    const timeoutId = setTimeout(handleResize, 200);
+    
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   return (
     <LanguageProvider>
