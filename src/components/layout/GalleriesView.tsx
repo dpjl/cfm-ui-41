@@ -25,7 +25,7 @@ const GalleriesView: React.FC<GalleriesViewProps> = ({
   const { getGalleryClasses, containerClasses, isGalleryVisible } = useGalleryLayout();
 
   return (
-    <div className={`${containerClasses} ${className}`}>
+    <div className={`${containerClasses} h-full ${className}`}>
       <div className="flex h-full">
         {/* Left Gallery - always mounted but conditionally visible */}
         <div className={getGalleryClasses('left')}>

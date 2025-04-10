@@ -6,8 +6,12 @@ import AppSidebar from '@/components/AppSidebar';
 import DbViewer from '@/components/db-viewer/DbViewer';
 import { useDbViewer } from '@/hooks/use-db-viewer';
 import { useGalleryContext } from '@/contexts/GalleryContext';
+import { useViewportHeight } from '@/hooks/use-viewport-height';
 
 const GalleryLayout: React.FC = () => {
+  // Activer le calcul de hauteur adaptative pour le viewport
+  useViewportHeight();
+  
   const {
     // Directory selection
     selectedDirectoryIdLeft,
@@ -86,7 +90,7 @@ const GalleryLayout: React.FC = () => {
   };
   
   return (
-    <div className="flex h-full overflow-hidden mt-2 relative">
+    <div className="flex h-viewport-safe overflow-hidden mt-2 relative">
       <SidePanel 
         position="left" 
         isOpen={leftPanelOpen} 

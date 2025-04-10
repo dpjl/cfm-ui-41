@@ -1,2 +1,26 @@
 
 @tailwind utilities;
+
+/* Classes utilitaires pour la hauteur du viewport */
+@layer utilities {
+  /* Classe pour appliquer la hauteur réelle du viewport calculée par JS */
+  .h-viewport-safe {
+    height: 100vh; /* Fallback */
+    height: calc(var(--real-vh, 1vh) * 100);
+  }
+  
+  /* Variante avec déduction de la hauteur d'en-tête */
+  .h-viewport-safe-minus-header {
+    height: calc(100vh - 3.5rem); /* Fallback */
+    height: calc((var(--real-vh, 1vh) * 100) - 3.5rem);
+  }
+  
+  /* Style pour conteneurs flexibles avec hauteur de viewport adaptative */
+  .flex-viewport-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Fallback */
+    height: calc(var(--real-vh, 1vh) * 100);
+    overflow: hidden;
+  }
+}

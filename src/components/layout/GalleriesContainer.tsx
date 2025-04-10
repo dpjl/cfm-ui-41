@@ -165,7 +165,7 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden h-full">
       <GalleriesView
         viewMode={mobileViewMode}
         leftContent={leftGalleryContent}
