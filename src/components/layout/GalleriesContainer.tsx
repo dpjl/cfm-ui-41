@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { fetchMediaIds } from '@/api/imageApi';
@@ -40,29 +39,40 @@ interface GalleriesContainerProps extends BaseGalleryProps, SidebarToggleProps {
   onColumnsChange?: (side: 'left' | 'right', count: number) => void;
 }
 
-const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
-  columnsCountLeft,
-  columnsCountRight,
-  selectedIdsLeft,
-  setSelectedIdsLeft,
-  selectedIdsRight,
-  setSelectedIdsRight,
-  selectedDirectoryIdLeft,
-  selectedDirectoryIdRight,
-  deleteDialogOpen,
-  setDeleteDialogOpen,
-  activeSide,
-  deleteMutation,
-  handleDeleteSelected,
-  handleDelete,
-  mobileViewMode,
-  setMobileViewMode,
-  leftFilter,
-  rightFilter,
-  onToggleLeftPanel,
-  onToggleRightPanel,
-  onColumnsChange
-}) => {
+const GalleriesContainer: React.FC<GalleriesContainerProps> = ({ ...props }) => {
+  const [viewportHeight, setViewportHeight] = useState(window.innerHeight);
+
+  useEffect(() => {
+    const handleResize = () => setViewportHeight(window.innerHeight);
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const {
+    columnsCountLeft,
+    columnsCountRight,
+    selectedIdsLeft,
+    setSelectedIdsLeft,
+    selectedIdsRight,
+    setSelectedIdsRight,
+    selectedDirectoryIdLeft,
+    selectedDirectoryIdRight,
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+    activeSide,
+    deleteMutation,
+    handleDeleteSelected,
+    handleDelete,
+    mobileViewMode,
+    setMobileViewMode,
+    leftFilter,
+    rightFilter,
+    onToggleLeftPanel,
+    onToggleRightPanel,
+    onColumnsChange
+  } = props;
+
   const isMobile = useIsMobile();
 
   // Fetch left gallery media IDs
@@ -165,7 +175,10 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div
+      className="gallery-container"
+      style={{ height: `${viewportHeight}px`, overflowY: 'auto' }}
+    >
       <GalleriesView
         viewMode={mobileViewMode}
         leftContent={leftGalleryContent}
