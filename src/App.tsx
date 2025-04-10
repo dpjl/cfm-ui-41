@@ -12,7 +12,7 @@ function AppWithViewportHeight() {
   useViewportHeight();
   
   return (
-    <div className="app-container h-viewport-safe">
+    <div className="app-container" style={{height: 'calc(var(--real-vh, 1vh) * 100)'}}>
       <AppRoutes />
       <Toaster />
     </div>

@@ -4,8 +4,8 @@ import { useIsMobile } from './use-breakpoint';
 
 /**
  * Hook qui calcule et met à jour la hauteur réelle du viewport sur tous les appareils
- * Cette approche résout les problèmes de hauteur inconsistante sur les navigateurs
- * notamment lors de l'apparition/disparition des barres d'UI
+ * Utilise l'API Visual Viewport pour obtenir des mesures précises sur mobile
+ * et résoudre les problèmes liés aux barres d'UI dynamiques
  */
 export function useViewportHeight() {
   const isMobile = useIsMobile();
@@ -14,72 +14,63 @@ export function useViewportHeight() {
   const updateViewportHeight = useCallback(() => {
     if (typeof window === 'undefined') return;
     
-    // Obtenir la hauteur réelle du viewport
-    const vh = window.innerHeight * 0.01;
+    // Utiliser Visual Viewport API si disponible, sinon utiliser window.innerHeight
+    const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const vh = height * 0.01;
     
     // Définir la variable CSS personnalisée
     document.documentElement.style.setProperty('--real-vh', `${vh}px`);
     
     // Log détaillé pour debug
-    console.log(`Viewport height updated: ${window.innerHeight}px (--real-vh: ${vh}px)`);
-    
-    // Vérifier que la variable est bien appliquée
-    const appliedVh = getComputedStyle(document.documentElement).getPropertyValue('--real-vh');
-    console.log(`Applied --real-vh value: ${appliedVh}`);
-    
-    // Vérifier tous les éléments avec la classe h-viewport-safe
-    const safeElements = document.querySelectorAll('.h-viewport-safe');
-    console.log(`Found ${safeElements.length} elements with h-viewport-safe class`);
-    safeElements.forEach((el, i) => {
-      const computedHeight = getComputedStyle(el).height;
-      console.log(`Element ${i+1} height: ${computedHeight}`);
-    });
+    console.log(`Viewport height updated: ${height}px (--real-vh: ${vh}px) [using ${window.visualViewport ? 'Visual Viewport API' : 'window.innerHeight'}]`);
   }, []);
 
   useEffect(() => {
     // Appliquer initialement
     updateViewportHeight();
     
-    // Écouter les événements pertinents
-    window.addEventListener('resize', updateViewportHeight, { passive: true });
-    window.addEventListener('orientationchange', updateViewportHeight, { passive: true });
-    
-    // Écouteur spécifique pour iOS - déclenché lors du défilement
-    if (isMobile) {
-      window.addEventListener('scroll', updateViewportHeight, { passive: true });
-    }
-    
-    // Appliquer après un court délai pour gérer certains cas spécifiques
-    const timeoutIds = [
-      setTimeout(updateViewportHeight, 100),
-      setTimeout(updateViewportHeight, 300),
-      setTimeout(updateViewportHeight, 500)
-    ];
-    
-    // Appliquer également lors de l'interaction avec la page
-    window.addEventListener('touchstart', updateViewportHeight, { passive: true });
-    window.addEventListener('click', updateViewportHeight, { passive: true });
-    window.addEventListener('load', updateViewportHeight, { passive: true });
-    
-    // Nettoyage
-    return () => {
-      window.removeEventListener('resize', updateViewportHeight);
-      window.removeEventListener('orientationchange', updateViewportHeight);
-      window.removeEventListener('touchstart', updateViewportHeight);
-      window.removeEventListener('click', updateViewportHeight);
-      window.removeEventListener('load', updateViewportHeight);
+    // Si Visual Viewport API est disponible, utiliser ses événements
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewportHeight);
+      window.visualViewport.addEventListener('scroll', updateViewportHeight);
+      
+      // Nettoyage spécifique à Visual Viewport
+      return () => {
+        window.visualViewport.removeEventListener('resize', updateViewportHeight);
+        window.visualViewport.removeEventListener('scroll', updateViewportHeight);
+      };
+    } 
+    // Fallback pour les navigateurs sans support Visual Viewport
+    else {
+      // Écouter les événements standard
+      window.addEventListener('resize', updateViewportHeight, { passive: true });
+      window.addEventListener('orientationchange', updateViewportHeight, { passive: true });
+      
+      // Écouteurs spécifiques pour mobile
       if (isMobile) {
-        window.removeEventListener('scroll', updateViewportHeight);
+        window.addEventListener('scroll', updateViewportHeight, { passive: true });
+        window.addEventListener('touchstart', updateViewportHeight, { passive: true });
       }
-      timeoutIds.forEach(id => clearTimeout(id));
-    };
+      
+      // Appliquer après un court délai pour gérer certains cas spécifiques
+      const timeoutId = setTimeout(updateViewportHeight, 300);
+      
+      // Nettoyage standard
+      return () => {
+        window.removeEventListener('resize', updateViewportHeight);
+        window.removeEventListener('orientationchange', updateViewportHeight);
+        if (isMobile) {
+          window.removeEventListener('scroll', updateViewportHeight);
+          window.removeEventListener('touchstart', updateViewportHeight);
+        }
+        clearTimeout(timeoutId);
+      };
+    }
   }, [isMobile, updateViewportHeight]);
 
   // Force une réexécution après le premier rendu
   useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      updateViewportHeight();
-    });
+    const id = requestAnimationFrame(updateViewportHeight);
     return () => cancelAnimationFrame(id);
   }, [updateViewportHeight]);
 }
