@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Calendar, ChevronLeft } from 'lucide-react';
 import { 
@@ -6,7 +5,6 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from '@/components/ui/drawer';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -16,17 +14,24 @@ interface DateSelectorProps {
   monthsByYear: Map<number, number[]>;
   onSelectYearMonth: (year: number, month: number) => void;
   position: 'source' | 'destination';
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const DateSelector: React.FC<DateSelectorProps> = ({
   years,
   monthsByYear,
   onSelectYearMonth,
-  position
+  position,
+  open,
+  onOpenChange
 }) => {
   const { t } = useLanguage();
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = open !== undefined && onOpenChange !== undefined;
+  const isOpen = isControlled ? open : internalOpen;
+  const setOpen = isControlled ? onOpenChange! : setInternalOpen;
 
   const handleSelectYear = useCallback((year: number) => {
     setSelectedYear(year);
@@ -35,10 +40,10 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   const handleSelectMonth = useCallback((month: number) => {
     if (selectedYear !== null) {
       onSelectYearMonth(selectedYear, month);
-      setIsOpen(false);
+      setOpen(false);
       setSelectedYear(null);
     }
-  }, [selectedYear, onSelectYearMonth]);
+  }, [selectedYear, onSelectYearMonth, setOpen]);
 
   const handleBackToYears = useCallback(() => {
     setSelectedYear(null);
@@ -59,17 +64,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
     : "top-2 right-2";
 
   return (
-    <Drawer open={isOpen} onOpenChange={setIsOpen}>
-      <DrawerTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={`absolute ${buttonPositionClass} bg-background/80 backdrop-blur-sm border border-border/50 shadow-md hover:bg-background/90 z-[50]`}
-          aria-label={t('select_date')}
-        >
-          <Calendar className="h-5 w-5" />
-        </Button>
-      </DrawerTrigger>
+    <Drawer open={isOpen} onOpenChange={setOpen}>
       <DrawerContent className="max-h-[85vh]">
         <DrawerHeader>
           <DrawerTitle className="flex items-center gap-2">

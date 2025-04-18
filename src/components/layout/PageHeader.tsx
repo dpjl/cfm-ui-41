@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Server } from 'lucide-react';
@@ -37,7 +36,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   return <header className="relative z-20 flex items-center justify-between gap-2 p-2 md:p-4 bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="flex items-center gap-3">
         <div>
-          <img src="/logo3.png" alt="Logo" className="h-12 md:h-16" />
+          <img src="/cfm-64x64.png" alt="Logo CFM" className="h-12 md:h-16" />
         </div>
         
         {/* Desktop view mode switcher */}

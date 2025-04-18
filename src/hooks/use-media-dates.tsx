@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { usePositionRestoration } from './use-position-restoration';
 import type { FixedSizeGrid } from 'react-window';
@@ -299,30 +298,32 @@ export function useMediaDates(
   // Nouvelle fonction optimisée: calculer le mois-année à partir d'une position de défilement
   const getYearMonthFromScrollPosition = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
     if (!gridRef.current || sortedSeparatorPositions.length === 0) return null;
-    
+
+    // Ajout d'un offset pour rendre la détection moins sensible
+    const SCROLL_OFFSET = 32; // pixels, à ajuster si besoin
     const rowHeight = gridRef.current.props.rowHeight;
     const columnCount = gridRef.current.props.columnCount;
-    
-    // Calculer l'index de la première ligne visible
-    const visibleRowIndex = Math.floor(scrollTop / rowHeight);
-    
-     // Calculer l'index du premier élément de cette ligne
+
+    // Calculer l'index de la première ligne visible avec offset
+    const visibleRowIndex = Math.floor((scrollTop + SCROLL_OFFSET) / rowHeight);
+
+    // Calculer l'index du premier élément de cette ligne
     const firstVisibleItemIndex = visibleRowIndex * columnCount;
-    
+
     // Recherche binaire pour trouver le dernier séparateur avant le premier élément visible
     let left = 0;
     let right = sortedSeparatorPositions.length - 1;
     let result = null;
-    
+
     // Si nous sommes avant le premier séparateur
     if (firstVisibleItemIndex < sortedSeparatorPositions[0].index) {
       return null;
     }
-    
+
     // Recherche binaire pour trouver le séparateur précédant le premier élément visible
     while (left <= right) {
       const mid = Math.floor((left + right) / 2);
-      
+
       if (sortedSeparatorPositions[mid].index <= firstVisibleItemIndex) {
         // Ce séparateur est un candidat potentiel
         result = sortedSeparatorPositions[mid].yearMonth;
@@ -333,7 +334,7 @@ export function useMediaDates(
         right = mid - 1;
       }
     }
-    
+
     return result;
   }, [sortedSeparatorPositions]);
 

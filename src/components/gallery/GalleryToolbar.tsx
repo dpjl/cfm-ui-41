@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '../ui/button';
 import { SelectionMode } from '../../hooks/use-gallery-selection';
@@ -14,6 +13,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { GalleryViewMode } from '@/types/gallery';
+import DateSelector from './DateSelector';
 
 interface GalleryToolbarProps {
   directory?: string;
@@ -27,13 +27,102 @@ interface GalleryToolbarProps {
   onToggleSidebar?: () => void;
   selectionMode: SelectionMode;
   onToggleSelectionMode: () => void;
-  // Props pour le toggle de vue
   mobileViewMode?: GalleryViewMode;
   onToggleFullView?: () => void;
-  // Props pour la navigation mensuelle
   onNavigateToPreviousMonth?: () => void;
   onNavigateToNextMonth?: () => void;
+  currentMonthLabel: string;
+  onMonthSelect?: () => void;
+  showMonthNavigation?: boolean;
+  years: number[];
+  monthsByYear: Map<number, number[]>;
+  onSelectYearMonth: (year: number, month: number) => void;
 }
+
+const MonthNavigationGroup: React.FC<{
+  onPrev?: () => void;
+  onNext?: () => void;
+  onMonthSelect?: () => void;
+  currentMonthLabel: string;
+  years: number[];
+  monthsByYear: Map<number, number[]>;
+  onSelectYearMonth: (year: number, month: number) => void;
+  position: 'source' | 'destination';
+}> = ({ onPrev, onNext, onMonthSelect, currentMonthLabel, years, monthsByYear, onSelectYearMonth, position }) => {
+  const isMobile = useIsMobile();
+
+  // Abréviation du mois si mobile
+  let displayLabel = currentMonthLabel;
+  if (isMobile && currentMonthLabel.match(/^[A-Za-zéûîâôäëöüàèùçÉÈÊËÎÏÔÖÛÜÂÄÇ]+ [0-9]{4}$/)) {
+    // Ex: "Avril 2025" => "04/25"
+    const moisNoms = [
+      'jan', 'fév', 'mar', 'avr', 'mai', 'jui', 'juil', 'aoû', 'sep', 'oct', 'nov', 'déc'
+    ];
+    const [mois, annee] = currentMonthLabel.split(' ');
+    let moisNum = moisNoms.findIndex(m => mois.toLowerCase().startsWith(m));
+    if (moisNum === -1) moisNum = 0;
+    const moisStr = (moisNum + 1).toString().padStart(2, '0');
+    const anneeStr = annee.slice(-2);
+    displayLabel = `${moisStr}/${anneeStr}`;
+  }
+
+  const [calendarOpen, setCalendarOpen] = React.useState(false);
+
+  return (
+    <>
+      <div className={isMobile ? "flex items-center gap-2 z-20" : "flex items-center gap-3 z-20"}>
+        {/* Inversé: bouton gauche = mois suivant */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onNext}
+          className="bg-white dark:bg-neutral-700 rounded-full p-1 shadow-lg hover:bg-primary/90 hover:text-white text-primary dark:text-white border border-primary dark:border-primary-foreground transition focus:ring-2 focus:ring-primary focus:outline-none"
+          aria-label="Mois suivant (inversé)"
+          style={{ minWidth: isMobile ? 32 : 40, minHeight: isMobile ? 32 : 40 }}
+        >
+          <ArrowLeft size={isMobile ? 15 : 22} />
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={e => { e.stopPropagation(); setCalendarOpen(true); }}
+          className={
+            `font-semibold shadow-xl rounded-full border-2 transition focus:ring-2 focus:ring-primary focus:outline-none ` +
+            (isMobile
+              ? 'bg-white dark:bg-neutral-700 text-primary dark:text-white px-4 py-0.5 text-xs border-primary dark:border-primary-foreground'
+              : 'bg-white dark:bg-neutral-700 text-primary dark:text-white px-8 py-2 text-lg md:text-xl border-primary dark:border-primary-foreground')
+          }
+          aria-label="Sélecteur de mois"
+          style={{ minWidth: isMobile ? 90 : 240, maxWidth: isMobile ? 120 : 320 }}
+        >
+          <span className="truncate block text-center">
+            {displayLabel}
+          </span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onPrev}
+          className="bg-white dark:bg-neutral-700 rounded-full p-1 shadow-lg hover:bg-primary/90 hover:text-white text-primary dark:text-white border border-primary dark:border-primary-foreground transition focus:ring-2 focus:ring-primary focus:outline-none"
+          aria-label="Mois précédent (inversé)"
+          style={{ minWidth: isMobile ? 32 : 40, minHeight: isMobile ? 32 : 40 }}
+        >
+          <ArrowRight size={isMobile ? 15 : 22} />
+        </Button>
+      </div>
+      <DateSelector
+        years={years}
+        monthsByYear={monthsByYear}
+        onSelectYearMonth={(year, month) => {
+          onSelectYearMonth(year, month);
+          setCalendarOpen(false);
+        }}
+        position={position}
+        open={calendarOpen}
+        onOpenChange={setCalendarOpen}
+      />
+    </>
+  );
+};
 
 const GalleryToolbar: React.FC<GalleryToolbarProps> = ({ 
   mediaIds,
@@ -48,56 +137,18 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
   mobileViewMode = 'both',
   onToggleFullView,
   onNavigateToPreviousMonth,
-  onNavigateToNextMonth
+  onNavigateToNextMonth,
+  currentMonthLabel,
+  onMonthSelect,
+  showMonthNavigation = false,
+  years,
+  monthsByYear,
+  onSelectYearMonth
 }) => {
   const isMobile = useIsMobile();
-  
-  // Détermine si on est en vue plein écran pour cette galerie
   const isFullView = (position === 'source' && mobileViewMode === 'left') || 
                      (position === 'destination' && mobileViewMode === 'right');
 
-  // Création des boutons de navigation mensuelle (maintenant toujours visibles)
-  const monthNavigationButtons = onNavigateToPreviousMonth && onNavigateToNextMonth ? (
-    <>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onNavigateToNextMonth} // MODIFIÉ: Inversé avec onNavigateToPreviousMonth pour correspondre à l'ordre chronologique
-              className="h-8 w-8"
-            >
-              <ArrowLeft size={isMobile ? 16 : 18} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Mois plus récent</p> {/* MODIFIÉ: Texte plus explicite */}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onNavigateToPreviousMonth} // MODIFIÉ: Inversé avec onNavigateToNextMonth pour correspondre à l'ordre chronologique
-              className="h-8 w-8"
-            >
-              <ArrowRight size={isMobile ? 16 : 18} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Mois plus ancien</p> {/* MODIFIÉ: Texte plus explicite */}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </>
-  ) : null;
-
-  // Pour la galerie de gauche (source)
   const leftGalleryToolbar = (
     <>
       {onToggleSidebar && (
@@ -110,15 +161,9 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
                 onClick={onToggleSidebar}
                 className="h-8 w-8"
               >
-                {position === 'source' ? (
-                  <div className="flex items-center justify-center">
-                    <Settings size={isMobile ? 14 : 16} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center">
-                    <Settings size={isMobile ? 14 : 16} />
-                  </div>
-                )}
+                <div className="flex items-center justify-center">
+                  <Settings size={isMobile ? 14 : 16} />
+                </div>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -127,7 +172,6 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
           </Tooltip>
         </TooltipProvider>
       )}
-
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -155,11 +199,6 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-
-      {/* Boutons de navigation mensuelle (maintenant toujours visibles) */}
-      {monthNavigationButtons}
-
-      {/* Bouton Agrandir/Réduire pour la vue */}
       {onToggleFullView && (
         <TooltipProvider>
           <Tooltip>
@@ -186,10 +225,8 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
     </>
   );
 
-  // Pour la galerie de droite (destination)
   const rightGalleryToolbar = (
     <>
-      {/* Bouton Agrandir/Réduire pour la vue */}
       {onToggleFullView && (
         <TooltipProvider>
           <Tooltip>
@@ -213,10 +250,6 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
           </Tooltip>
         </TooltipProvider>
       )}
-
-      {/* Boutons de navigation mensuelle (maintenant toujours visibles) */}
-      {monthNavigationButtons}
-
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -244,7 +277,6 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      
       {onToggleSidebar && (
         <TooltipProvider>
           <Tooltip>
@@ -255,15 +287,9 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
                 onClick={onToggleSidebar}
                 className="h-8 w-8"
               >
-                {position === 'source' ? (
-                  <div className="flex items-center justify-center">
-                    <Settings size={isMobile ? 14 : 16} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center">
-                    <Settings size={isMobile ? 14 : 16} />
-                  </div>
-                )}
+                <div className="flex items-center justify-center">
+                  <Settings size={isMobile ? 14 : 16} />
+                </div>
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -275,14 +301,26 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
     </>
   );
 
+  if (showMonthNavigation) {
+    return (
+      <MonthNavigationGroup
+        onPrev={onNavigateToPreviousMonth}
+        onNext={onNavigateToNextMonth}
+        onMonthSelect={onMonthSelect}
+        currentMonthLabel={currentMonthLabel}
+        years={years}
+        monthsByYear={monthsByYear}
+        onSelectYearMonth={onSelectYearMonth}
+        position={position}
+      />
+    );
+  }
+
   return (
-    <div className="flex items-center justify-between space-x-2 py-2">
-      {/* Galerie gauche: aligné à gauche */}
+    <div className="flex items-center justify-between space-x-2 py-2 relative">
       <div className="flex items-center space-x-1">
         {position === 'source' && leftGalleryToolbar}
       </div>
-      
-      {/* Galerie droite: aligné à droite */}
       <div className="flex items-center space-x-1 ml-auto">
         {position === 'destination' && rightGalleryToolbar}
       </div>

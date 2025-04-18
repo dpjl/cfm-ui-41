@@ -1,11 +1,9 @@
-
-import React, { memo, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { memo, useMemo, useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { FixedSizeGrid } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useGalleryGrid } from '@/hooks/use-gallery-grid';
 import { useGalleryMediaTracking } from '@/hooks/use-gallery-media-tracking';
 import GalleryGridCell from './GalleryGridCell';
-import DateSelector from './DateSelector';
 import { useMediaDates } from '@/hooks/use-media-dates';
 import { MediaListResponse } from '@/types/gallery';
 import { 
@@ -26,15 +24,24 @@ interface VirtualizedGalleryGridProps {
   showDates?: boolean;
   position: 'source' | 'destination';
   gap?: number;
-  onSetNavigationFunctions?: (prevFn: () => boolean, nextFn: () => boolean) => void;
+  onSetNavigationFunctions?: (fns: { prev: () => void, next: () => void, select: () => void }) => void;
   gridRef?: React.RefObject<any>;
+  mobileViewMode?: GalleryViewMode;
+  onToggleFullView?: () => void;
+  filter?: string;
+  onPreviewMedia?: (id: string) => void;
+  onDeleteSelected?: () => void;
+  currentMonthLabel?: string;
+  onMonthSelect?: () => void;
+  onCurrentMonthChange?: (label: string) => void;
+  onDateIndexChange?: (dateIndex: { years: number[]; monthsByYear: Map<number, number[]> }) => void;
 }
 
 /**
  * A virtualized grid component that efficiently renders large collections of media items
  * With improved dimension calculations to prevent gaps and support for month/year separators
  */
-const VirtualizedGalleryGrid = memo(({
+const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
   mediaResponse,
   selectedIds,
   onSelectId,
@@ -44,8 +51,17 @@ const VirtualizedGalleryGrid = memo(({
   position = 'source',
   gap = 8,
   onSetNavigationFunctions,
-  gridRef: externalGridRef
-}: VirtualizedGalleryGridProps) => {
+  gridRef: externalGridRef,
+  mobileViewMode,
+  onToggleFullView,
+  filter,
+  onPreviewMedia,
+  onDeleteSelected,
+  currentMonthLabel,
+  onMonthSelect,
+  onCurrentMonthChange,
+  onDateIndexChange
+}, ref) => {
   const mediaIds = mediaResponse?.mediaIds || [];
   const isMobile = useIsMobile();
   
@@ -104,19 +120,28 @@ const VirtualizedGalleryGrid = memo(({
   const handleNextMonth = useCallback(() => {
     return navigateToNextMonth(effectiveGridRef);
   }, [navigateToNextMonth, effectiveGridRef]);
-  
+
+  const handleMonthSelect = useCallback(() => {
+    if (onMonthSelect) onMonthSelect();
+  }, [onMonthSelect]);
+
+  // Forward les fonctions de navigation au parent (Gallery)
+  useEffect(() => {
+    if (onSetNavigationFunctions) {
+      onSetNavigationFunctions({
+        prev: handlePrevMonth,
+        next: handleNextMonth,
+        select: handleMonthSelect
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handlePrevMonth, handleNextMonth, handleMonthSelect, onSetNavigationFunctions]);
+
   // Utiliser le hook de navigation mensuelle pour les raccourcis clavier
   useMonthNavigation({
     navigateToPreviousMonth: handlePrevMonth,
     navigateToNextMonth: handleNextMonth
   });
-  
-  // Passer les fonctions de navigation au composant parent si nécessaire
-  useEffect(() => {
-    if (onSetNavigationFunctions) {
-      onSetNavigationFunctions(handlePrevMonth, handleNextMonth);
-    }
-  }, [handlePrevMonth, handleNextMonth, onSetNavigationFunctions]);
   
   const scrollbarWidth = useMemo(() => getScrollbarWidth(), []);
   
@@ -181,14 +206,29 @@ const VirtualizedGalleryGrid = memo(({
     return `media-${item.id}`;
   }, [enrichedGalleryItems, columnsCount]);
   
+  // Met à jour le mois courant dans le parent si besoin
+  useEffect(() => {
+    if (onCurrentMonthChange && currentYearMonthLabel) {
+      onCurrentMonthChange(currentYearMonthLabel);
+    }
+  }, [onCurrentMonthChange, currentYearMonthLabel]);
+  
+  // Synchronisation du dateIndex dynamique avec le parent
+  useEffect(() => {
+    if (onDateIndexChange) {
+      onDateIndexChange(dateIndex);
+    }
+  }, [dateIndex, onDateIndexChange]);
+  
+  useImperativeHandle(ref, () => ({
+    scrollToYearMonth: (year: number, month: number) => {
+      scrollToYearMonth(year, month, effectiveGridRef);
+    },
+    // On peut exposer d’autres méthodes si besoin
+  }), [scrollToYearMonth, effectiveGridRef]);
+  
   return (
     <div className="w-full h-full p-2 gallery-container relative">
-      {/* Bandeau du mois courant */}
-      <CurrentMonthBanner 
-        currentMonth={currentYearMonthLabel}
-        position={position}
-      />
-      
       <AutoSizer key={`gallery-grid-${gridKey}`}>
         {({ height, width }) => {
           const { 
@@ -223,15 +263,6 @@ const VirtualizedGalleryGrid = memo(({
           );
         }}
       </AutoSizer>
-      
-      {dateIndex.years.length > 0 && (
-        <DateSelector
-          years={dateIndex.years}
-          monthsByYear={dateIndex.monthsByYear}
-          onSelectYearMonth={handleSelectYearMonth}
-          position={position}
-        />
-      )}
     </div>
   );
 });

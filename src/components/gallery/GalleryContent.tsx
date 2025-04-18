@@ -1,5 +1,4 @@
-
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import Gallery from '@/components/gallery/Gallery';
 import { useGalleryZoom } from '@/hooks/use-gallery-zoom';
 import { GalleryViewMode, MediaListResponse } from '@/types/gallery';
@@ -20,7 +19,6 @@ interface GalleryContentProps {
   position?: 'source' | 'destination';
   onToggleSidebar?: () => void;
   onColumnsChange?: (count: number) => void;
-  // Nouvelles props pour le toggle de vue
   mobileViewMode?: GalleryViewMode;
   onToggleFullView?: () => void;
 }
@@ -73,13 +71,18 @@ const GalleryContent: React.FC<GalleryContentProps> = ({
     });
   }
   
+  // Provide a handler compatible with (id, extendSelection)
+  const handleSelectId = useCallback((id: string, extendSelection?: boolean) => {
+    onSelectId(id);
+  }, [onSelectId]);
+  
   return (
     <div ref={containerRef} className="h-full w-full">
       <Gallery
         title={title}
         mediaResponse={mediaResponse}
         selectedIds={selectedIds}
-        onSelectId={onSelectId}
+        onSelectId={handleSelectId}
         isLoading={isLoading}
         columnsCount={columnsCount}
         onPreviewMedia={onPreviewItem}
