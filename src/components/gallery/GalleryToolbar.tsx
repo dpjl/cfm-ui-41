@@ -70,29 +70,31 @@ const MonthNavigationGroup: React.FC<{
 
   return (
     <>
-      <div className={isMobile ? "flex items-center gap-2 z-20" : "flex items-center gap-3 z-20"}>
+      <div className={isMobile ? "flex items-center gap-1 z-20" : "flex items-center gap-3 z-20"}>
         {/* Inversé: bouton gauche = mois suivant */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onNext}
-          className="bg-white dark:bg-neutral-700 rounded-full p-1 shadow-lg hover:bg-primary/90 hover:text-white text-primary dark:text-white border border-primary dark:border-primary-foreground transition focus:ring-2 focus:ring-primary focus:outline-none"
+          className={
+            isMobile
+              ? "bg-white dark:bg-neutral-700 rounded-full p-1 shadow hover:bg-primary/90 hover:text-white text-primary dark:text-white border border-primary dark:border-primary-foreground transition focus:ring-1 focus:ring-primary focus:outline-none min-w-[28px] min-h-[28px] w-7 h-7"
+              : "bg-white dark:bg-neutral-700 rounded-full p-1 shadow-lg hover:bg-primary/90 hover:text-white text-primary dark:text-white border border-primary dark:border-primary-foreground transition focus:ring-2 focus:ring-primary focus:outline-none min-w-[32px] min-h-[32px]"
+          }
           aria-label="Mois suivant (inversé)"
-          style={{ minWidth: isMobile ? 32 : 40, minHeight: isMobile ? 32 : 40 }}
         >
-          <ArrowLeft size={isMobile ? 15 : 22} />
+          <ArrowLeft size={isMobile ? 16 : 22} />
         </Button>
         <Button
           variant="ghost"
           onClick={e => { e.stopPropagation(); setCalendarOpen(true); }}
           className={
-            `font-semibold shadow-xl rounded-full border-2 transition focus:ring-2 focus:ring-primary focus:outline-none ` +
+            `font-semibold shadow-xl rounded-full border-2 transition focus:ring-1 focus:ring-primary focus:outline-none ` +
             (isMobile
-              ? 'bg-white dark:bg-neutral-700 text-primary dark:text-white px-4 py-0.5 text-xs border-primary dark:border-primary-foreground'
-              : 'bg-white dark:bg-neutral-700 text-primary dark:text-white px-8 py-2 text-lg md:text-xl border-primary dark:border-primary-foreground')
+              ? 'bg-white dark:bg-neutral-700 text-primary dark:text-white px-3 py-1 text-xs border-primary dark:border-primary-foreground min-w-[60px] max-w-[80px] h-7'
+              : 'bg-white dark:bg-neutral-700 text-primary dark:text-white px-8 py-2 text-lg md:text-xl border-primary dark:border-primary-foreground min-w-[240px] max-w-[320px]')
           }
           aria-label="Sélecteur de mois"
-          style={{ minWidth: isMobile ? 90 : 240, maxWidth: isMobile ? 120 : 320 }}
         >
           <span className="truncate block text-center">
             {displayLabel}
@@ -102,11 +104,14 @@ const MonthNavigationGroup: React.FC<{
           variant="ghost"
           size="icon"
           onClick={onPrev}
-          className="bg-white dark:bg-neutral-700 rounded-full p-1 shadow-lg hover:bg-primary/90 hover:text-white text-primary dark:text-white border border-primary dark:border-primary-foreground transition focus:ring-2 focus:ring-primary focus:outline-none"
+          className={
+            isMobile
+              ? "bg-white dark:bg-neutral-700 rounded-full p-1 shadow hover:bg-primary/90 hover:text-white text-primary dark:text-white border border-primary dark:border-primary-foreground transition focus:ring-1 focus:ring-primary focus:outline-none min-w-[28px] min-h-[28px] w-7 h-7"
+              : "bg-white dark:bg-neutral-700 rounded-full p-1 shadow-lg hover:bg-primary/90 hover:text-white text-primary dark:text-white border border-primary dark:border-primary-foreground transition focus:ring-2 focus:ring-primary focus:outline-none min-w-[32px] min-h-[32px]"
+          }
           aria-label="Mois précédent (inversé)"
-          style={{ minWidth: isMobile ? 32 : 40, minHeight: isMobile ? 32 : 40 }}
         >
-          <ArrowRight size={isMobile ? 15 : 22} />
+          <ArrowRight size={isMobile ? 16 : 22} />
         </Button>
       </div>
       <DateSelector
@@ -222,11 +227,49 @@ const GalleryToolbar: React.FC<GalleryToolbarProps> = ({
           </Tooltip>
         </TooltipProvider>
       )}
+      <div className="flex items-center justify-center text-gray-500">
+        <span className="flex items-center gap-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3.75 4.5h16.5M3.75 9h16.5M3.75 13.5h16.5M3.75 18h16.5"
+            />
+          </svg>
+          <span className="text-xs">{mediaIds.length}</span>
+        </span>
+      </div>
     </>
   );
 
   const rightGalleryToolbar = (
     <>
+      <div className="flex items-center justify-center text-gray-500">
+        <span className="flex items-center gap-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3.75 4.5h16.5M3.75 9h16.5M3.75 13.5h16.5M3.75 18h16.5"
+            />
+          </svg>
+          <span className="text-xs">{mediaIds.length}</span>
+        </span>
+      </div>
       {onToggleFullView && (
         <TooltipProvider>
           <Tooltip>
