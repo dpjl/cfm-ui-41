@@ -5,7 +5,7 @@ import { useGalleryGrid } from '@/hooks/use-gallery-grid';
 import { useGalleryMediaTracking } from '@/hooks/use-gallery-media-tracking';
 import GalleryGridCell from './GalleryGridCell';
 import { useMediaDates } from '@/hooks/use-media-dates';
-import { MediaListResponse } from '@/types/gallery';
+import { MediaIdsByDate } from '@/types/gallery';
 import { 
   calculateGridParameters,
   getScrollbarWidth
@@ -16,7 +16,7 @@ import { useGalleryContext } from '@/contexts/GalleryContext';
 import { useIsMobile } from '@/hooks/use-media-query';
 
 interface VirtualizedGalleryGridProps {
-  mediaResponse: MediaListResponse;
+  mediaByDate: MediaIdsByDate;
   selectedIds: string[];
   onSelectId: (id: string, extendSelection: boolean) => void;
   columnsCount: number;
@@ -42,7 +42,7 @@ interface VirtualizedGalleryGridProps {
  * With improved dimension calculations to prevent gaps and support for month/year separators
  */
 const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
-  mediaResponse,
+  mediaByDate,
   selectedIds,
   onSelectId,
   columnsCount = 5,
@@ -62,7 +62,6 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
   onCurrentMonthChange,
   onDateIndexChange
 }, ref) => {
-  const mediaIds = mediaResponse?.mediaIds || [];
   const isMobile = useIsMobile();
   
   // Obtenir le contexte pour accéder aux fonctions de persistance
@@ -85,7 +84,7 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
   // Utiliser le gridRef externe s'il est fourni, sinon utiliser l'interne
   const effectiveGridRef = externalGridRef || internalGridRef;
   
-  const { 
+  const {
     dateIndex, 
     scrollToYearMonth, 
     enrichedGalleryItems,
@@ -96,7 +95,7 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
     setExternalGridRef,
     currentYearMonth
   } = useMediaDates(
-    mediaResponse, 
+    mediaByDate, 
     columnsCount,
     position,
     persistedYearMonth,
@@ -110,7 +109,7 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
     }
   }, [effectiveGridRef, setExternalGridRef]);
   
-  useGalleryMediaTracking(mediaResponse, effectiveGridRef);
+  useGalleryMediaTracking(mediaByDate, effectiveGridRef);
   
   // Handlers pour la navigation mensuelle
   const handlePrevMonth = useCallback(() => {

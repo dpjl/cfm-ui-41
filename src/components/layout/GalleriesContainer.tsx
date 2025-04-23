@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-breakpoint';
@@ -65,15 +64,15 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
 }) => {
   const isMobile = useIsMobile();
 
-  // Fetch left gallery media IDs
-  const { data: leftMediaIds = { mediaIds: [], mediaDates: [] }, isLoading: isLoadingLeftMediaIds, error: errorLeftMediaIds } = useQuery({
-    queryKey: ['leftMediaIds', selectedDirectoryIdLeft, leftFilter],
+  // Fetch left gallery media (nouveau format)
+  const { data: leftMediaByDate = {}, isLoading: isLoadingLeftMediaIds, error: errorLeftMediaIds } = useQuery({
+    queryKey: ['leftMediaByDate', selectedDirectoryIdLeft, leftFilter],
     queryFn: () => fetchMediaIds(selectedDirectoryIdLeft, 'source', leftFilter as string)
   });
-  
-  // Fetch right gallery media IDs
-  const { data: rightMediaIds = { mediaIds: [], mediaDates: [] }, isLoading: isLoadingRightMediaIds, error: errorRightMediaIds } = useQuery({
-    queryKey: ['rightMediaIds', selectedDirectoryIdRight, rightFilter],
+
+  // Fetch right gallery media (nouveau format)
+  const { data: rightMediaByDate = {}, isLoading: isLoadingRightMediaIds, error: errorRightMediaIds } = useQuery({
+    queryKey: ['rightMediaByDate', selectedDirectoryIdRight, rightFilter],
     queryFn: () => fetchMediaIds(selectedDirectoryIdRight, 'destination', rightFilter as string)
   });
 
@@ -123,7 +122,7 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
   const leftGalleryContent = (
     <GalleryContent
       title="Source"
-      mediaResponse={leftMediaIds}
+      mediaByDate={leftMediaByDate}
       selectedIds={selectedIdsLeft}
       onSelectId={handleSelectIdLeft}
       isLoading={isLoadingLeftMediaIds}
@@ -145,7 +144,7 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
   const rightGalleryContent = (
     <GalleryContent
       title="Destination"
-      mediaResponse={rightMediaIds}
+      mediaByDate={rightMediaByDate}
       selectedIds={selectedIdsRight}
       onSelectId={handleSelectIdRight}
       isLoading={isLoadingRightMediaIds}

@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { usePositionRestoration } from './use-position-restoration';
 import type { FixedSizeGrid } from 'react-window';
-import { MediaListResponse, GalleryItem } from '@/types/gallery';
+import { MediaIdsByDate, GalleryItem } from '@/types/gallery';
 import { throttle } from 'lodash';
 
 // On utilise GalleryItem au lieu de EnrichedGalleryItem qui n'existe pas
@@ -29,7 +29,7 @@ const formatMonthYearLabel = (yearMonth: string): string => {
 };
 
 export function useMediaDates(
-  mediaResponse: MediaListResponse | undefined,
+  mediaByDate: MediaIdsByDate | undefined,
   columnsCount: number,
   position: 'source' | 'destination',
   persistedYearMonth?: string | null,
@@ -51,7 +51,7 @@ export function useMediaDates(
 
   // Construire les index à partir des données reçues
   const dateIndex = useMemo(() => {
-    if (!mediaResponse?.mediaIds || !mediaResponse?.mediaDates) {
+    if (!mediaByDate) {
       return {
         idToDate: new Map(),
         yearMonthToIndex: new Map(),
@@ -59,158 +59,79 @@ export function useMediaDates(
         monthsByYear: new Map()
       };
     }
-
-    const { mediaIds, mediaDates } = mediaResponse;
     const idToDate = new Map<string, string>();
     const yearMonthToIndex = new Map<string, number>();
-    const yearMonthSet = new Set<string>();
     const yearSet = new Set<number>();
     const monthsByYear = new Map<number, Set<number>>();
-
-    // Construire les maps et sets
-    for (let i = 0; i < mediaIds.length; i++) {
-      const id = mediaIds[i];
-      const date = mediaDates[i];
-      
-      if (date) {
-        // Mettre en correspondance ID et date
-        idToDate.set(id, date);
-        
-        // Extraire année et mois
-        const [year, month] = date.split('-').map(Number);
-        
-        if (!isNaN(year) && !isNaN(month)) {
-          const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
-          
-          // Enregistrer la première occurrence de cette année-mois
-          if (!yearMonthToIndex.has(yearMonth)) {
-            yearMonthToIndex.set(yearMonth, i);
-          }
-          
-          // Mémoriser l'année-mois
-          yearMonthSet.add(yearMonth);
-          
-          // Mémoriser l'année
-          yearSet.add(year);
-          
-          // Mémoriser le mois pour cette année
-          if (!monthsByYear.has(year)) {
-            monthsByYear.set(year, new Set<number>());
-          }
-          monthsByYear.get(year)?.add(month);
+    let index = 0;
+    // Trier les dates du plus récent au plus ancien
+    const sortedDates = Object.keys(mediaByDate).sort((a, b) => b.localeCompare(a));
+    for (const date of sortedDates) {
+      const [year, month] = date.split('-').map(Number);
+      if (!isNaN(year) && !isNaN(month)) {
+        yearSet.add(year);
+        if (!monthsByYear.has(year)) monthsByYear.set(year, new Set<number>());
+        monthsByYear.get(year)?.add(month);
+        const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
+        if (!yearMonthToIndex.has(yearMonth)) yearMonthToIndex.set(yearMonth, index);
+        for (const id of mediaByDate[date]) {
+          idToDate.set(id, date);
+          index++;
         }
       }
     }
-
-    // Convertir les sets en arrays triés
-    const years = Array.from(yearSet).sort((a, b) => b - a); // Tri descendant
-    
+    const years = Array.from(yearSet).sort((a, b) => b - a);
     const monthsByYearMap = new Map<number, number[]>();
     monthsByYear.forEach((months, year) => {
       monthsByYearMap.set(year, Array.from(months).sort((a, b) => a - b));
     });
-
     return {
       idToDate,
       yearMonthToIndex,
       years,
       monthsByYear: monthsByYearMap
     };
-  }, [mediaResponse]);
+  }, [mediaByDate]);
 
   // Premier useMemo pour créer enrichedGalleryItems
   const enrichedGalleryItems = useMemo(() => {
-    if (!mediaResponse?.mediaIds || !mediaResponse?.mediaDates) {
-      return [];
+    if (!mediaByDate) return [];
+    
+    // Regrouper les ids par mois (YYYY-MM)
+    const monthToIds = new Map<string, string[]>();
+    for (const date of Object.keys(mediaByDate)) {
+      const [year, month] = date.split('-');
+      if (!year || !month) continue;
+      const yearMonth = `${year}-${month}`;
+      if (!monthToIds.has(yearMonth)) monthToIds.set(yearMonth, []);
+      monthToIds.get(yearMonth)!.push(...mediaByDate[date]);
     }
-
-    const { mediaIds, mediaDates } = mediaResponse;
+    
+    // Générer les GalleryItem avec un séparateur par mois
     const items: EnrichedGalleryItem[] = [];
-    let actualIndex = 0; // Index réel dans la liste finale
-
-    // Fonction pour formatter le label du mois/année (ex: "Janvier 2023")
-    const formatMonthYearLabel = (yearMonth: string): string => {
-      const [year, month] = yearMonth.split('-').map(Number);
-      const monthNames = [
-        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-      ];
-      return `${monthNames[month - 1]} ${year}`;
-    };
-
-    // Premier passage : collecte des médias groupés par mois/année
-    const mediaByYearMonth = new Map<string, { id: string, index: number, date: string }[]>();
-    
-    for (let i = 0; i < mediaIds.length; i++) {
-      const id = mediaIds[i];
-      const date = mediaDates[i];
-      
-      if (date) {
-        const [year, month] = date.split('-').map(Number);
-        if (!isNaN(year) && !isNaN(month)) {
-          const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
-          
-          if (!mediaByYearMonth.has(yearMonth)) {
-            mediaByYearMonth.set(yearMonth, []);
-          }
-          
-          mediaByYearMonth.get(yearMonth)!.push({ id, index: i, date });
-        }
-      }
-    }
-    
-    // Deuxième passage : création de la liste finale avec séparateurs
-    // Tri des year-months dans l'ordre chronologique inverse
-    const sortedYearMonths = Array.from(mediaByYearMonth.keys()).sort((a, b) => b.localeCompare(a));
-    
-    // Pour chaque mois/année
+    let actualIndex = 0;
+    const sortedYearMonths = Array.from(monthToIds.keys()).sort((a, b) => b.localeCompare(a));
     for (const yearMonth of sortedYearMonths) {
-      // Vérifier si nous sommes au début d'une ligne (dans une grille virtuelle)
-      // Si nous ne sommes pas au début d'une ligne, ajouter des éléments vides pour compléter la ligne
-      // Utiliser le paramètre columnsCount au lieu de la valeur codée en dur
+      // Saut de ligne si besoin
       const isStartOfRow = items.length % columnsCount === 0;
-      
       if (!isStartOfRow) {
-        // Calculer combien d'éléments vides nous devons ajouter pour atteindre le début de la ligne suivante
-        // Utiliser columnsCount au lieu de la valeur codée en dur
         const itemsToAdd = columnsCount - (items.length % columnsCount);
         for (let i = 0; i < itemsToAdd; i++) {
-          // Ajouter un élément vide explicite qui ne déclenchera pas de requêtes
-          items.push({
-            type: 'media',
-            id: `empty-${yearMonth}-${i}`,  // Amélioration: ID plus spécifique pour debug
-            index: -1,          // Index original invalide
-            actualIndex: actualIndex         // Index réel tenant compte des séparateurs
-          });
+          items.push({ type: 'media', id: `empty-${yearMonth}-${i}`, index: -1, actualIndex });
           actualIndex++;
         }
       }
-      
-      // Maintenant nous sommes sûrs d'être au début d'une ligne
-      // Ajouter un séparateur pour ce mois/année
-      items.push({
-        type: 'separator',
-        yearMonth,
-        label: formatMonthYearLabel(yearMonth),
-        index: actualIndex
-      });
+      // Séparateur mensuel
+      items.push({ type: 'separator', yearMonth, label: formatMonthYearLabel(yearMonth), index: actualIndex });
       actualIndex++;
-      
-      // Ajouter tous les médias de ce mois/année
-      const mediaItems = mediaByYearMonth.get(yearMonth)!;
-      for (const { id, index } of mediaItems) {
-        items.push({
-          type: 'media',
-          id,
-          index,          // Index original dans mediaIds
-          actualIndex     // Index réel tenant compte des séparateurs
-        });
+      // Médias du mois
+      for (const id of monthToIds.get(yearMonth)!) {
+        items.push({ type: 'media', id, index: actualIndex, actualIndex });
         actualIndex++;
       }
     }
-
     return items;
-  }, [mediaResponse, columnsCount]);
+  }, [mediaByDate, columnsCount]);
 
   // Créer un index optimisé des séparateurs APRÈS avoir créé enrichedGalleryItems
   const sortedSeparatorPositions = useMemo(() => {

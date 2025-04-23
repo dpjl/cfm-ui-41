@@ -1,4 +1,3 @@
-
 // Renommer MobileViewMode en GalleryViewMode pour plus de cohérence
 export type GalleryViewMode = 'both' | 'left' | 'right';
 
@@ -15,6 +14,9 @@ export interface MediaItem {
   directory?: string;
   type?: "image" | "video";
 }
+
+// Structure optimisée pour la réponse API: { [date: string]: string[] }
+export type MediaIdsByDate = { [date: string]: string[] };
 
 // Structure de la réponse API pour les listes de médias avec leurs dates
 export interface MediaListResponse {

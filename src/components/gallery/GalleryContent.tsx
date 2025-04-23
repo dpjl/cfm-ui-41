@@ -1,10 +1,10 @@
 import React, { useRef, useCallback } from 'react';
 import Gallery from '@/components/gallery/Gallery';
 import { useGalleryZoom } from '@/hooks/use-gallery-zoom';
-import { GalleryViewMode, MediaListResponse } from '@/types/gallery';
+import { MediaIdsByDate, GalleryViewMode } from '@/types/gallery';
 
 interface GalleryContentProps {
-  mediaResponse: MediaListResponse;
+  mediaByDate: MediaIdsByDate;
   selectedIds: string[];
   onSelectId: (id: string) => void;
   isLoading: boolean;
@@ -24,7 +24,7 @@ interface GalleryContentProps {
 }
 
 const GalleryContent: React.FC<GalleryContentProps> = ({
-  mediaResponse,
+  mediaByDate,
   selectedIds,
   onSelectId,
   isLoading,
@@ -80,7 +80,7 @@ const GalleryContent: React.FC<GalleryContentProps> = ({
     <div ref={containerRef} className="h-full w-full">
       <Gallery
         title={title}
-        mediaResponse={mediaResponse}
+        mediaByDate={mediaByDate}
         selectedIds={selectedIds}
         onSelectId={handleSelectId}
         isLoading={isLoading}
