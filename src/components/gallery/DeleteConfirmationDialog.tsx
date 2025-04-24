@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import {
@@ -44,7 +43,7 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
           </AlertDialogTitle>
           <AlertDialogDescription>
             Cette action déplacera les éléments sélectionnés dans la corbeille située dans le cache de l'application CFM.
-            {itemCount > 1 && ` (${itemCount} items)`}
+            {itemCount > 0 && ` (${itemCount} items)`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

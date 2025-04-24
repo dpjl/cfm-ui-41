@@ -3,6 +3,7 @@ import LazyMediaItem from '@/components/LazyMediaItem';
 import MonthYearSeparator from './MonthYearSeparator';
 import { GalleryItem } from '@/types/gallery';
 import { useBreakpoint } from '@/hooks/use-breakpoint';
+import { parseMediaId } from '@/utils/mediaId';
 
 interface GalleryGridCellProps {
   columnIndex: number;
@@ -17,6 +18,7 @@ interface GalleryGridCellProps {
     columnsCount: number;
     gap: number;
     calculateCellStyle: (style: React.CSSProperties, columnIndex: number, isSeparator: boolean) => React.CSSProperties;
+    recentlyDeletedIds: string[];
   };
 }
 
@@ -97,12 +99,14 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
   // For media type, render the media item
   const id = item.id;
   const isSelected = data.selectedIds.includes(id);
+  const { isDeleted } = parseMediaId(id);
+  const isRecentlyDeleted = data.recentlyDeletedIds.includes(id);
   
   // Calculate the cell style with proper gap adjustments
   const adjustedStyle = data.calculateCellStyle(style, columnIndex, false);
   
   return (
-    <div style={adjustedStyle}>
+    <div style={adjustedStyle} className="relative">
       <LazyMediaItem
         key={id}
         id={id}
@@ -112,6 +116,13 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
         showDates={data.showDates}
         position={data.position}
       />
+      {(isDeleted || isRecentlyDeleted) && (
+        <div className="absolute top-1 right-1 z-10 bg-white/80 rounded-full p-1">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-rose-500">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </div>
+      )}
     </div>
   );
 });

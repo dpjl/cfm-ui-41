@@ -23,6 +23,7 @@ interface GalleryContentProps {
   onToggleFullView?: () => void;
   isSyncMode?: boolean;
   unionData?: MediaIdsByDate;
+  recentlyDeletedIds?: string[];
 }
 
 const GalleryContent: React.FC<GalleryContentProps> = ({
@@ -44,7 +45,8 @@ const GalleryContent: React.FC<GalleryContentProps> = ({
   mobileViewMode,
   onToggleFullView,
   isSyncMode,
-  unionData
+  unionData,
+  recentlyDeletedIds = []
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<any>(null);
@@ -103,6 +105,7 @@ const GalleryContent: React.FC<GalleryContentProps> = ({
         gridRef={gridRef}
         isSyncMode={isSyncMode}
         unionData={unionData}
+        recentlyDeletedIds={recentlyDeletedIds}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { fetchMediaIds } from '@/api/imageApi';
@@ -65,6 +65,8 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [syncMode, setSyncMode] = useState(false);
+  const [recentlyDeletedIds, setRecentlyDeletedIds] = useState<string[]>([]);
+  const [galleryToDelete, setGalleryToDelete] = useState<'left' | 'right'>('left');
 
   // Calcul du nombre de colonnes synchronisé
   const syncColumnsCount = Math.min(columnsCountLeft, columnsCountRight);
@@ -88,8 +90,15 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
   const handlePreviewItemRight = (id: string) => console.log(`Previewing item ${id} in destination`);
   
   // Simplified handlers for deletion
-  const handleDeleteLeft = () => handleDeleteSelected('left');
-  const handleDeleteRight = () => handleDeleteSelected('right');
+  const handleDeleteLeft = () => {
+    setGalleryToDelete('left');
+    handleDeleteSelected('left');
+  };
+  
+  const handleDeleteRight = () => {
+    setGalleryToDelete('right');
+    handleDeleteSelected('right');
+  };
 
   // Column change handlers
   const handleLeftColumnsChange = (count: number) => {
@@ -123,6 +132,29 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
     }
   };
 
+  // Handler pour la suppression
+  const handleDeleteConfirmed = useCallback(() => {
+    // Mettre à jour les IDs supprimés avant la suppression
+    if (galleryToDelete === 'left' && selectedIdsLeft.length > 0) {
+      setRecentlyDeletedIds(prev => [...prev, ...selectedIdsLeft]);
+    } else if (galleryToDelete === 'right' && selectedIdsRight.length > 0) {
+      setRecentlyDeletedIds(prev => [...prev, ...selectedIdsRight]);
+    }
+    
+    // Appeler la fonction de suppression originale
+    handleDelete();
+  }, [galleryToDelete, selectedIdsLeft, selectedIdsRight, handleDelete]);
+
+  // Effet pour nettoyer les IDs supprimés après un délai
+  useEffect(() => {
+    if (recentlyDeletedIds.length > 0) {
+      const timer = setTimeout(() => {
+        setRecentlyDeletedIds([]);
+      }, 3000); // 3 secondes
+      return () => clearTimeout(timer);
+    }
+  }, [recentlyDeletedIds]);
+
   // Prepare content for left and right galleries
   const leftGalleryContent = (
     <GalleryContent
@@ -145,6 +177,7 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
       onToggleFullView={handleToggleLeftFullView}
       isSyncMode={syncMode}
       unionData={syncMode ? rightMediaByDate : undefined}
+      recentlyDeletedIds={recentlyDeletedIds}
     />
   );
 
@@ -169,6 +202,7 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
       onToggleFullView={handleToggleRightFullView}
       isSyncMode={syncMode}
       unionData={syncMode ? leftMediaByDate : undefined}
+      recentlyDeletedIds={recentlyDeletedIds}
     />
   );
 
@@ -187,10 +221,11 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDelete}
-        selectedIds={activeSide === 'left' ? selectedIdsLeft : selectedIdsRight}
+        selectedIds={galleryToDelete === 'left' ? selectedIdsLeft : selectedIdsRight}
+        onConfirm={handleDeleteConfirmed}
         onCancel={() => setDeleteDialogOpen(false)}
         isPending={deleteMutation.isPending}
+        count={galleryToDelete === 'left' ? selectedIdsLeft.length : selectedIdsRight.length}
       />
     </div>
   );

@@ -38,6 +38,7 @@ interface VirtualizedGalleryGridProps {
   onDateIndexChange?: (dateIndex: { years: number[]; monthsByYear: Map<number, number[]> }) => void;
   isSyncMode?: boolean;
   unionData?: MediaIdsByDate;
+  recentlyDeletedIds?: string[];
 }
 
 /**
@@ -65,7 +66,8 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
   onCurrentMonthChange,
   onDateIndexChange,
   isSyncMode,
-  unionData
+  unionData,
+  recentlyDeletedIds = []
 }, ref) => {
   const isMobile = useIsMobile();
   const { updateScroll, registerGrid } = useScrollSync();
@@ -209,8 +211,9 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
     position,
     columnsCount,
     gap,
-    calculateCellStyle
-  }), [enrichedGalleryItems, selectedIds, onSelectId, showDates, position, columnsCount, gap, calculateCellStyle]);
+    calculateCellStyle,
+    recentlyDeletedIds
+  }), [enrichedGalleryItems, selectedIds, onSelectId, showDates, position, columnsCount, gap, calculateCellStyle, recentlyDeletedIds]);
   
   const getItemKey = useCallback(({ columnIndex, rowIndex }: { columnIndex: number; rowIndex: number }) => {
     const index = rowIndex * columnsCount + columnIndex;

@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from 'react';
 import { getMediaUrl } from '@/api/imageApi';
 import { useToast } from '@/components/ui/use-toast';
@@ -120,7 +119,7 @@ export function useMediaOperations(
   
   // Cette fonction est appelée quand on confirme la suppression dans le dialogue
   const handleDelete = useCallback(() => {
-    // Utiliser galleryToDelete au lieu de activeSide
+    // Utiliser galleryToDelete pour déterminer la galerie à supprimer
     if (galleryToDelete === 'left' && selectedIdsLeft.length > 0) {
       deleteMutation.mutate({ ids: selectedIdsLeft, directory: 'source' });
     } else if (galleryToDelete === 'right' && selectedIdsRight.length > 0) {

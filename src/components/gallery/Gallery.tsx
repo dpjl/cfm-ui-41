@@ -39,6 +39,7 @@ interface GalleryProps {
   gridRef?: React.RefObject<any>;
   isSyncMode?: boolean;
   unionData?: MediaIdsByDate;
+  recentlyDeletedIds?: string[];
 }
 
 const Gallery: React.FC<GalleryProps> = ({
@@ -61,7 +62,8 @@ const Gallery: React.FC<GalleryProps> = ({
   onToggleFullView,
   gridRef,
   isSyncMode,
-  unionData
+  unionData,
+  recentlyDeletedIds = []
 }) => {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
@@ -148,6 +150,12 @@ const Gallery: React.FC<GalleryProps> = ({
     selection.handleSelectItem(id, extendSelection);
   }, [selection]);
 
+  // Calculer le nombre total d'éléments
+  const totalItems = useMemo(() => {
+    if (!mediaByDate) return 0;
+    return Object.values(mediaByDate).reduce((acc, ids) => acc + ids.length, 0);
+  }, [mediaByDate]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
@@ -178,7 +186,7 @@ const Gallery: React.FC<GalleryProps> = ({
   return (
     <div className="flex flex-col h-full relative" ref={containerRef}>
       <GalleryToolbar
-        mediaIds={[]}
+        mediaIds={Object.values(mediaByDate || {}).flat()}
         selectedIds={selectedIds}
         onSelectAll={selection.handleSelectAll}
         onDeselectAll={selection.handleDeselectAll}
@@ -235,6 +243,7 @@ const Gallery: React.FC<GalleryProps> = ({
             onDateIndexChange={setDateIndex}
             isSyncMode={isSyncMode}
             unionData={unionData}
+            recentlyDeletedIds={recentlyDeletedIds}
           />
         )}
         <div className="pointer-events-none">
