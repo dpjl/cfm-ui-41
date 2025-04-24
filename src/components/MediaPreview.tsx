@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Image, Video } from 'lucide-react';
 import { Button } from './ui/button';
 import { useLazyMediaInfo } from '@/hooks/use-lazy-media-info';
+import { useIsMobile } from '@/hooks/use-breakpoint';
 
 interface MediaPreviewProps {
   mediaId: string;
@@ -14,6 +14,7 @@ interface MediaPreviewProps {
   hasNext?: boolean;
   hasPrevious?: boolean;
   position?: 'source' | 'destination';
+  mediaByDate?: { [key: string]: string[] };
 }
 
 const MediaPreview: React.FC<MediaPreviewProps> = ({
@@ -25,12 +26,19 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
   onPrevious,
   hasNext = false,
   hasPrevious = false,
-  position = 'source'
+  position = 'source',
+  mediaByDate = {}
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+  const isMobile = useIsMobile();
+
+  // Flatten all media IDs from mediaByDate
+  const allMediaIds = Object.values(mediaByDate).flat();
+  const currentIndex = allMediaIds.indexOf(mediaId);
+  const totalMedia = allMediaIds.length;
 
   // Utiliser notre hook pour charger les infos au besoin
   const { loadMediaInfo, getMediaInfo } = useLazyMediaInfo(position);
@@ -64,13 +72,13 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
-      else if (e.key === 'ArrowRight' && hasNext && onNext) onNext();
-      else if (e.key === 'ArrowLeft' && hasPrevious && onPrevious) onPrevious();
+      else if (e.key === 'ArrowRight' && onNext) onNext();
+      else if (e.key === 'ArrowLeft' && onPrevious) onPrevious();
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, onNext, onPrevious, hasNext, hasPrevious]);
+  }, [onClose, onNext, onPrevious]);
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 backdrop-blur-sm">
@@ -81,17 +89,19 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
       </div>
 
       <div className="relative w-full h-full max-w-7xl max-h-[90vh] flex items-center justify-center p-4">
-        {hasPrevious && onPrevious && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onPrevious}
-            className="absolute left-4 z-10 text-white hover:bg-white/20"
-            aria-label="Previous media"
-          >
-            <ChevronLeft size={24} />
-          </Button>
-        )}
+        {/* Bouton précédent */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onPrevious}
+          className={`absolute left-4 z-10 text-white hover:bg-white/20 ${
+            isMobile ? 'h-16 w-16' : 'h-12 w-12'
+          }`}
+          aria-label="Previous media"
+          disabled={!hasPrevious}
+        >
+          <ChevronLeft size={isMobile ? 32 : 24} />
+        </Button>
 
         <div className="relative w-full h-full flex items-center justify-center">
           {isVideo ? (
@@ -135,17 +145,24 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({
           )}
         </div>
 
-        {hasNext && onNext && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onNext}
-            className="absolute right-4 z-10 text-white hover:bg-white/20"
-            aria-label="Next media"
-          >
-            <ChevronRight size={24} />
-          </Button>
-        )}
+        {/* Bouton suivant */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onNext}
+          className={`absolute right-4 z-10 text-white hover:bg-white/20 ${
+            isMobile ? 'h-16 w-16' : 'h-12 w-12'
+          }`}
+          aria-label="Next media"
+          disabled={!hasNext}
+        >
+          <ChevronRight size={isMobile ? 32 : 24} />
+        </Button>
+
+        {/* Indicateur de position */}
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+          {currentIndex + 1} / {totalMedia}
+        </div>
       </div>
     </div>
   );

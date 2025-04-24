@@ -87,6 +87,26 @@ const Gallery: React.FC<GalleryProps> = ({
     position
   );
 
+  // Flatten all media IDs from mediaByDate
+  const allMediaIds = useMemo(() => Object.values(mediaByDate).flat(), [mediaByDate]);
+  const currentIndex = preview.previewMediaId ? allMediaIds.indexOf(preview.previewMediaId) : -1;
+  const hasNext = currentIndex < allMediaIds.length - 1;
+  const hasPrevious = currentIndex > 0;
+
+  const handleNext = useCallback(() => {
+    if (hasNext) {
+      const nextId = allMediaIds[currentIndex + 1];
+      preview.handleOpenPreview(nextId);
+    }
+  }, [hasNext, currentIndex, allMediaIds, preview]);
+
+  const handlePrevious = useCallback(() => {
+    if (hasPrevious) {
+      const prevId = allMediaIds[currentIndex - 1];
+      preview.handleOpenPreview(prevId);
+    }
+  }, [hasPrevious, currentIndex, allMediaIds, preview]);
+
   const navigateToPreviousMonthRef = useRef<() => boolean>(() => false);
   const navigateToNextMonthRef = useRef<() => boolean>(() => false);
 
@@ -278,11 +298,12 @@ const Gallery: React.FC<GalleryProps> = ({
           mediaId={preview.previewMediaId}
           isVideo={isVideoPreview(preview.previewMediaId)}
           onClose={preview.handleClosePreview}
-          onNext={undefined}
-          onPrevious={undefined}
-          hasNext={false}
-          hasPrevious={false}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+          hasNext={hasNext}
+          hasPrevious={hasPrevious}
           position={position}
+          mediaByDate={mediaByDate}
         />
       )}
     </div>

@@ -1,7 +1,6 @@
-
 import React, { useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { X, Eye, Trash, Download } from 'lucide-react';
+import { X, Eye, Trash, Download, FileText, Clock, Hash } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { DetailedMediaInfo } from '@/api/imageApi';
@@ -91,35 +90,66 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
           {displayInfo && !isMultiSelection && (
             <div className="space-y-1.5 w-full">
               <div className="w-full">
-                <span className="text-[10px] text-muted-foreground block">Filename</span>
-                <div className="overflow-x-auto">
-                  <span className="text-xs whitespace-nowrap block">{displayInfo.alt}</span>
-                </div>
+                {isMobile ? (
+                  <div className="flex items-center gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+                    <FileText size={12} className="text-muted-foreground flex-shrink-0" />
+                    <span className="text-xs whitespace-nowrap">{displayInfo.alt}</span>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-[10px] text-muted-foreground block">Filename</span>
+                    <div className="overflow-x-auto">
+                      <span className="text-xs whitespace-nowrap block">{displayInfo.alt}</span>
+                    </div>
+                  </>
+                )}
               </div>
               
               {displayInfo.createdAt && (
                 <div>
-                  <span className="text-[10px] text-muted-foreground block">Created</span>
-                  <div className="overflow-x-auto">
-                    <span className="text-xs whitespace-nowrap">
-                      {new Date(displayInfo.createdAt).toLocaleDateString()} 
-                      <span className="text-muted-foreground ml-1">
-                        ({formatDistanceToNow(new Date(displayInfo.createdAt), { addSuffix: true })})
+                  {isMobile ? (
+                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+                      <Clock size={12} className="text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs whitespace-nowrap">
+                        {new Date(displayInfo.createdAt).toLocaleString()} 
+                        <span className="text-muted-foreground ml-1">
+                          ({formatDistanceToNow(new Date(displayInfo.createdAt), { addSuffix: true })})
+                        </span>
                       </span>
-                    </span>
-                  </div>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-[10px] text-muted-foreground block">Created</span>
+                      <div className="overflow-x-auto">
+                        <span className="text-xs whitespace-nowrap">
+                          {new Date(displayInfo.createdAt).toLocaleString()} 
+                          <span className="text-muted-foreground ml-1">
+                            ({formatDistanceToNow(new Date(displayInfo.createdAt), { addSuffix: true })})
+                          </span>
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
               
-              <div>
-                <span className="text-[10px] text-muted-foreground block">Type</span>
-                <span className="text-xs">
-                  {displayInfo.alt?.toLowerCase().endsWith('.mp4') || 
-                  displayInfo.alt?.toLowerCase().endsWith('.mov') 
-                    ? 'Video' 
-                    : 'Image'}
-                </span>
-              </div>
+              {displayInfo.hash && (
+                <div>
+                  {isMobile ? (
+                    <div className="flex items-center gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+                      <Hash size={12} className="text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs whitespace-nowrap">{displayInfo.hash}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-[10px] text-muted-foreground block">Hash</span>
+                      <span className="text-xs">
+                        {displayInfo.hash}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </ScrollArea>
