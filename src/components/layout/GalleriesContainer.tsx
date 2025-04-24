@@ -89,6 +89,19 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
   const handlePreviewItemLeft = (id: string) => console.log(`Previewing item ${id} in source`);
   const handlePreviewItemRight = (id: string) => console.log(`Previewing item ${id} in destination`);
   
+  // Handler pour la suppression
+  const handleDeleteConfirmed = useCallback(() => {
+    // Mettre à jour les IDs supprimés avant la suppression
+    if (galleryToDelete === 'left' && selectedIdsLeft.length > 0) {
+      setRecentlyDeletedIds(prev => [...prev, ...selectedIdsLeft]);
+    } else if (galleryToDelete === 'right' && selectedIdsRight.length > 0) {
+      setRecentlyDeletedIds(prev => [...prev, ...selectedIdsRight]);
+    }
+    
+    // Appeler la fonction de suppression originale
+    handleDelete();
+  }, [galleryToDelete, selectedIdsLeft, selectedIdsRight, handleDelete]);
+
   // Simplified handlers for deletion
   const handleDeleteLeft = () => {
     setGalleryToDelete('left');
@@ -131,29 +144,6 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
       setMobileViewMode('right');
     }
   };
-
-  // Handler pour la suppression
-  const handleDeleteConfirmed = useCallback(() => {
-    // Mettre à jour les IDs supprimés avant la suppression
-    if (galleryToDelete === 'left' && selectedIdsLeft.length > 0) {
-      setRecentlyDeletedIds(prev => [...prev, ...selectedIdsLeft]);
-    } else if (galleryToDelete === 'right' && selectedIdsRight.length > 0) {
-      setRecentlyDeletedIds(prev => [...prev, ...selectedIdsRight]);
-    }
-    
-    // Appeler la fonction de suppression originale
-    handleDelete();
-  }, [galleryToDelete, selectedIdsLeft, selectedIdsRight, handleDelete]);
-
-  // Effet pour nettoyer les IDs supprimés après un délai
-  useEffect(() => {
-    if (recentlyDeletedIds.length > 0) {
-      const timer = setTimeout(() => {
-        setRecentlyDeletedIds([]);
-      }, 3000); // 3 secondes
-      return () => clearTimeout(timer);
-    }
-  }, [recentlyDeletedIds]);
 
   // Prepare content for left and right galleries
   const leftGalleryContent = (
