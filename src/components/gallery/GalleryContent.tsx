@@ -21,6 +21,8 @@ interface GalleryContentProps {
   onColumnsChange?: (count: number) => void;
   mobileViewMode?: GalleryViewMode;
   onToggleFullView?: () => void;
+  isSyncMode?: boolean;
+  unionData?: MediaIdsByDate;
 }
 
 const GalleryContent: React.FC<GalleryContentProps> = ({
@@ -40,7 +42,9 @@ const GalleryContent: React.FC<GalleryContentProps> = ({
   onToggleSidebar,
   onColumnsChange,
   mobileViewMode,
-  onToggleFullView
+  onToggleFullView,
+  isSyncMode,
+  unionData
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<any>(null);
@@ -97,6 +101,8 @@ const GalleryContent: React.FC<GalleryContentProps> = ({
         mobileViewMode={mobileViewMode}
         onToggleFullView={onToggleFullView}
         gridRef={gridRef}
+        isSyncMode={isSyncMode}
+        unionData={unionData}
       />
     </div>
   );

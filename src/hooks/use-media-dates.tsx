@@ -16,6 +16,8 @@ interface MediaDateIndex {
   years: number[];
   // Available months for each year
   monthsByYear: Map<number, number[]>;
+  // Maps year-month to first index in the union array
+  yearMonthToUnionIndex: Map<string, number>;
 }
 
 // Fonction utilitaire pour formater le label du mois/année
@@ -28,18 +30,32 @@ const formatMonthYearLabel = (yearMonth: string): string => {
   return `${monthNames[month - 1]} ${year}`;
 };
 
+// Fonction utilitaire pour extraire le group_id
+const extractGroupId = (id: string): number => {
+  const cleanId = id.startsWith('v') ? id.slice(1) : id;
+  return parseInt(cleanId.split('.')[0]);
+};
+
 export function useMediaDates(
   mediaByDate: MediaIdsByDate | undefined,
   columnsCount: number,
   position: 'source' | 'destination',
   persistedYearMonth?: string | null,
-  onYearMonthChange?: (yearMonth: string | null, immediate?: boolean) => void
+  onYearMonthChange?: (yearMonth: string | null, immediate?: boolean) => void,
+  isSyncMode?: boolean,
+  unionData?: MediaIdsByDate
 ) {
   const [currentYearMonth, setCurrentYearMonth] = useState<string | null>(null);
   const [currentYearMonthLabel, setCurrentYearMonthLabel] = useState<string | null>(null);
   const lastScrollPositionRef = useRef<number>(0);
   const throttledUpdateRef = useRef<any>(null);
   const externalGridRefRef = useRef<React.RefObject<any> | null>(null);
+  const dateToSortedIdsRef = useRef<Map<string, string[]>>(new Map());
+  const performanceRef = useRef<{
+    dateIndex: number;
+    enrichedItems: number;
+    total: number;
+  }>({ dateIndex: 0, enrichedItems: 0, total: 0 });
   
   // Référence pour indiquer si la modification vient d'une action manuelle (clic sur date)
   const isManualChangeRef = useRef<boolean>(false);
@@ -51,21 +67,27 @@ export function useMediaDates(
 
   // Construire les index à partir des données reçues
   const dateIndex = useMemo(() => {
+    const startTime = performance.now();
+    
     if (!mediaByDate) {
       return {
         idToDate: new Map(),
         yearMonthToIndex: new Map(),
         years: [],
-        monthsByYear: new Map()
+        monthsByYear: new Map(),
+        yearMonthToUnionIndex: new Map()
       };
     }
+
     const idToDate = new Map<string, string>();
     const yearMonthToIndex = new Map<string, number>();
     const yearSet = new Set<number>();
     const monthsByYear = new Map<number, Set<number>>();
     let index = 0;
+
     // Trier les dates du plus récent au plus ancien
     const sortedDates = Object.keys(mediaByDate).sort((a, b) => b.localeCompare(a));
+    
     for (const date of sortedDates) {
       const [year, month] = date.split('-').map(Number);
       if (!isNaN(year) && !isNaN(month)) {
@@ -80,37 +102,116 @@ export function useMediaDates(
         }
       }
     }
+
+    // Calcul de yearMonthToUnionIndex si en mode synchronisé
+    const yearMonthToUnionIndex = new Map<string, number>();
+    if (isSyncMode && unionData) {
+      let unionIndex = 0;
+      const allDates = new Set([...Object.keys(mediaByDate), ...Object.keys(unionData)]);
+      const sortedUnionDates = Array.from(allDates).sort((a, b) => b.localeCompare(a));
+      
+      // Pré-calculer les group_id pour tous les IDs
+      const idToGroupId = new Map<string, number>();
+      const allIds = new Set<string>();
+      
+      // Première passe : collecter tous les IDs uniques et leurs group_id
+      for (const date of sortedUnionDates) {
+        const ids = [...(mediaByDate[date] || []), ...(unionData[date] || [])];
+        for (const id of ids) {
+          if (!idToGroupId.has(id)) {
+            idToGroupId.set(id, extractGroupId(id));
+            allIds.add(id);
+          }
+        }
+      }
+      
+      // Deuxième passe : organiser les IDs par date et les trier
+      const dateToSortedIds = new Map<string, string[]>();
+      for (const date of sortedUnionDates) {
+        const [year, month] = date.split('-').map(Number);
+        if (!isNaN(year) && !isNaN(month)) {
+          const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
+          if (!yearMonthToUnionIndex.has(yearMonth)) {
+            yearMonthToUnionIndex.set(yearMonth, unionIndex);
+          }
+          
+          // Récupérer tous les IDs pour cette date
+          const dateIds = new Set([
+            ...(mediaByDate[date] || []),
+            ...(unionData[date] || [])
+          ]);
+          
+          // Trier les IDs en utilisant les group_id pré-calculés
+          const sortedIds = Array.from(dateIds).sort((a, b) => 
+            (idToGroupId.get(a) || 0) - (idToGroupId.get(b) || 0)
+          );
+          
+          dateToSortedIds.set(date, sortedIds);
+          unionIndex += sortedIds.length;
+        }
+      }
+      
+      // Sauvegarder les IDs triés dans la référence
+      dateToSortedIdsRef.current = dateToSortedIds;
+    }
+
     const years = Array.from(yearSet).sort((a, b) => b - a);
     const monthsByYearMap = new Map<number, number[]>();
     monthsByYear.forEach((months, year) => {
       monthsByYearMap.set(year, Array.from(months).sort((a, b) => a - b));
     });
+
+    const endTime = performance.now();
+    performanceRef.current.dateIndex = endTime - startTime;
+
     return {
       idToDate,
       yearMonthToIndex,
       years,
-      monthsByYear: monthsByYearMap
+      monthsByYear: monthsByYearMap,
+      yearMonthToUnionIndex
     };
-  }, [mediaByDate]);
+  }, [mediaByDate, isSyncMode, unionData]);
 
   // Premier useMemo pour créer enrichedGalleryItems
   const enrichedGalleryItems = useMemo(() => {
+    const startTime = performance.now();
+    
     if (!mediaByDate) return [];
     
-    // Regrouper les ids par mois (YYYY-MM)
+    // Création de monthToIds pour le mode normal
     const monthToIds = new Map<string, string[]>();
-    for (const date of Object.keys(mediaByDate)) {
-      const [year, month] = date.split('-');
-      if (!year || !month) continue;
-      const yearMonth = `${year}-${month}`;
-      if (!monthToIds.has(yearMonth)) monthToIds.set(yearMonth, []);
-      monthToIds.get(yearMonth)!.push(...mediaByDate[date]);
+    if (!isSyncMode) {
+      for (const date of Object.keys(mediaByDate)) {
+        const [year, month] = date.split('-');
+        if (!year || !month) continue;
+        const yearMonth = `${year}-${month}`;
+        if (!monthToIds.has(yearMonth)) monthToIds.set(yearMonth, []);
+        monthToIds.get(yearMonth)!.push(...mediaByDate[date]);
+      }
     }
-    
-    // Générer les GalleryItem avec un séparateur par mois
-    const items: EnrichedGalleryItem[] = [];
+
+    // Création de monthToUnionIds pour le mode synchronisé
+    const monthToUnionIds = new Map<string, string[]>();
+    if (isSyncMode && unionData) {
+      // Utiliser les IDs triés pré-calculés
+      for (const [date, sortedIds] of dateToSortedIdsRef.current.entries()) {
+        const [year, month] = date.split('-');
+        if (!year || !month) continue;
+        const yearMonth = `${year}-${month}`;
+        monthToUnionIds.set(yearMonth, sortedIds);
+      }
+    }
+
+    // Utilisation de la source de données appropriée
+    const sourceData = isSyncMode ? monthToUnionIds : monthToIds;
+    if (!sourceData) return [];
+
+    // Génération des GalleryItem
+    const items: GalleryItem[] = [];
     let actualIndex = 0;
-    const sortedYearMonths = Array.from(monthToIds.keys()).sort((a, b) => b.localeCompare(a));
+    const sortedYearMonths = Array.from(sourceData.keys()).sort((a, b) => b.localeCompare(a));
+
     for (const yearMonth of sortedYearMonths) {
       // Saut de ligne si besoin
       const isStartOfRow = items.length % columnsCount === 0;
@@ -121,17 +222,49 @@ export function useMediaDates(
           actualIndex++;
         }
       }
+
       // Séparateur mensuel
-      items.push({ type: 'separator', yearMonth, label: formatMonthYearLabel(yearMonth), index: actualIndex });
+      items.push({ 
+        type: 'separator', 
+        yearMonth, 
+        label: formatMonthYearLabel(yearMonth), 
+        index: actualIndex, 
+        actualIndex 
+      });
       actualIndex++;
+
       // Médias du mois
-      for (const id of monthToIds.get(yearMonth)!) {
-        items.push({ type: 'media', id, index: actualIndex, actualIndex });
+      const ids = sourceData.get(yearMonth)!;
+      for (const id of ids) {
+        // En mode synchronisé, vérifier si l'ID est présent dans la galerie actuelle
+        if (isSyncMode) {
+          // Utiliser idToDate pour une recherche O(1) au lieu de O(n)
+          const isPresent = dateIndex.idToDate.has(id);
+          items.push({
+            type: isPresent ? 'media' : 'missing',
+            id,
+            index: actualIndex,
+            actualIndex
+          });
+        } else {
+          items.push({ type: 'media', id, index: actualIndex, actualIndex });
+        }
         actualIndex++;
       }
     }
+
+    const endTime = performance.now();
+    performanceRef.current.enrichedItems = endTime - startTime;
+    performanceRef.current.total = performanceRef.current.dateIndex + performanceRef.current.enrichedItems;
+
+    // Log des performances
+    console.log(`[Performance] Mode synchronisé: ${isSyncMode ? 'ON' : 'OFF'}`);
+    console.log(`[Performance] dateIndex: ${performanceRef.current.dateIndex.toFixed(2)}ms`);
+    console.log(`[Performance] enrichedItems: ${performanceRef.current.enrichedItems.toFixed(2)}ms`);
+    console.log(`[Performance] Total: ${performanceRef.current.total.toFixed(2)}ms`);
+
     return items;
-  }, [mediaByDate, columnsCount]);
+  }, [mediaByDate, columnsCount, isSyncMode, unionData]);
 
   // Créer un index optimisé des séparateurs APRÈS avoir créé enrichedGalleryItems
   const sortedSeparatorPositions = useMemo(() => {

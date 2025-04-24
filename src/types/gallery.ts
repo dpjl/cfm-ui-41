@@ -24,10 +24,11 @@ export interface MediaListResponse {
   mediaDates: string[];
 }
 
-// Nouveau type pour représenter soit un média, soit un séparateur
+// Nouveau type pour représenter soit un média, soit un séparateur, soit un élément manquant
 export type GalleryItem = 
   | { type: 'media'; id: string; index: number; actualIndex?: number }
-  | { type: 'separator'; yearMonth: string; label: string; index: number };
+  | { type: 'separator'; yearMonth: string; label: string; index: number; actualIndex?: number }
+  | { type: 'missing'; id: string; index: number; actualIndex?: number };
 
 // Ensure all translation keys are properly typed
 export type TranslationKey = 

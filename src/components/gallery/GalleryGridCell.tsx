@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import LazyMediaItem from '@/components/LazyMediaItem';
 import MonthYearSeparator from './MonthYearSeparator';
@@ -65,6 +64,34 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
   if (item.id.startsWith('empty-')) {
     const emptyStyle = data.calculateCellStyle(style, columnIndex, false);
     return <div style={emptyStyle} className="empty-cell" aria-hidden="true" />;
+  }
+
+  // Pour les éléments manquants, afficher une case avec une croix rouge
+  if (item.type === 'missing') {
+    const missingStyle = data.calculateCellStyle(style, columnIndex, false);
+    return (
+      <div 
+        style={missingStyle} 
+        className="missing-cell relative bg-gray-100 flex items-center justify-center"
+        role="cell"
+        aria-label={`Missing item: ${item.id}`}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="w-6 h-6 text-red-500"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </div>
+    );
   }
   
   // For media type, render the media item

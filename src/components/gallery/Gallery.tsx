@@ -37,6 +37,8 @@ interface GalleryProps {
   mobileViewMode?: GalleryViewMode;
   onToggleFullView?: () => void;
   gridRef?: React.RefObject<any>;
+  isSyncMode?: boolean;
+  unionData?: MediaIdsByDate;
 }
 
 const Gallery: React.FC<GalleryProps> = ({
@@ -57,7 +59,9 @@ const Gallery: React.FC<GalleryProps> = ({
   gap = 8,
   mobileViewMode,
   onToggleFullView,
-  gridRef
+  gridRef,
+  isSyncMode,
+  unionData
 }) => {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
@@ -229,6 +233,8 @@ const Gallery: React.FC<GalleryProps> = ({
             onSetNavigationFunctions={handleSetNavigationFunctionsLocal}
             gridRef={gridRefLocal}
             onDateIndexChange={setDateIndex}
+            isSyncMode={isSyncMode}
+            unionData={unionData}
           />
         )}
         <div className="pointer-events-none">

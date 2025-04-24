@@ -5,7 +5,7 @@ import { useGalleryGrid } from '@/hooks/use-gallery-grid';
 import { useGalleryMediaTracking } from '@/hooks/use-gallery-media-tracking';
 import GalleryGridCell from './GalleryGridCell';
 import { useMediaDates } from '@/hooks/use-media-dates';
-import { MediaIdsByDate } from '@/types/gallery';
+import { MediaIdsByDate, GalleryViewMode } from '@/types/gallery';
 import { 
   calculateGridParameters,
   getScrollbarWidth
@@ -35,6 +35,8 @@ interface VirtualizedGalleryGridProps {
   onMonthSelect?: () => void;
   onCurrentMonthChange?: (label: string) => void;
   onDateIndexChange?: (dateIndex: { years: number[]; monthsByYear: Map<number, number[]> }) => void;
+  isSyncMode?: boolean;
+  unionData?: MediaIdsByDate;
 }
 
 /**
@@ -60,7 +62,9 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
   currentMonthLabel,
   onMonthSelect,
   onCurrentMonthChange,
-  onDateIndexChange
+  onDateIndexChange,
+  isSyncMode,
+  unionData
 }, ref) => {
   const isMobile = useIsMobile();
   
@@ -99,7 +103,9 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
     columnsCount,
     position,
     persistedYearMonth,
-    updateYearMonth
+    updateYearMonth,
+    isSyncMode,
+    unionData
   );
   
   // Passer la référence de la grille au hook useMediaDates
@@ -223,7 +229,7 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
     scrollToYearMonth: (year: number, month: number) => {
       scrollToYearMonth(year, month, effectiveGridRef);
     },
-    // On peut exposer d’autres méthodes si besoin
+    // On peut exposer d'autres méthodes si besoin
   }), [scrollToYearMonth, effectiveGridRef]);
   
   return (

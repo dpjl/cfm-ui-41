@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { fetchMediaIds } from '@/api/imageApi';
@@ -63,6 +63,7 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
   onColumnsChange
 }) => {
   const isMobile = useIsMobile();
+  const [syncMode, setSyncMode] = useState(false);
 
   // Fetch left gallery media (nouveau format)
   const { data: leftMediaByDate = {}, isLoading: isLoadingLeftMediaIds, error: errorLeftMediaIds } = useQuery({
@@ -138,6 +139,8 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
       onColumnsChange={handleLeftColumnsChange}
       mobileViewMode={mobileViewMode}
       onToggleFullView={handleToggleLeftFullView}
+      isSyncMode={syncMode}
+      unionData={syncMode ? rightMediaByDate : undefined}
     />
   );
 
@@ -160,6 +163,8 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
       onColumnsChange={handleRightColumnsChange}
       mobileViewMode={mobileViewMode}
       onToggleFullView={handleToggleRightFullView}
+      isSyncMode={syncMode}
+      unionData={syncMode ? leftMediaByDate : undefined}
     />
   );
 
@@ -169,6 +174,8 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
         viewMode={mobileViewMode}
         leftContent={leftGalleryContent}
         rightContent={rightGalleryContent}
+        syncMode={syncMode}
+        onToggleSyncMode={() => setSyncMode(!syncMode)}
       />
 
       <DeleteConfirmationDialog
