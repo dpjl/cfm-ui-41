@@ -14,6 +14,7 @@ import { useMonthNavigation } from '@/hooks/use-month-navigation';
 import CurrentMonthBanner from './CurrentMonthBanner';
 import { useGalleryContext } from '@/contexts/GalleryContext';
 import { useIsMobile } from '@/hooks/use-media-query';
+import { useScrollSync } from '@/contexts/ScrollSyncContext';
 
 interface VirtualizedGalleryGridProps {
   mediaByDate: MediaIdsByDate;
@@ -67,6 +68,7 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
   unionData
 }, ref) => {
   const isMobile = useIsMobile();
+  const { updateScroll, registerGrid } = useScrollSync();
   
   // Obtenir le contexte pour accéder aux fonctions de persistance
   const galleryContext = useGalleryContext();
@@ -185,7 +187,19 @@ const VirtualizedGalleryGrid = forwardRef<any, VirtualizedGalleryGridProps>(({
   const handleScroll = useCallback(({ scrollTop }: { scrollTop: number }) => {
     // Mettre à jour le mois courant
     updateCurrentYearMonthFromScroll(scrollTop, effectiveGridRef);
-  }, [updateCurrentYearMonthFromScroll, effectiveGridRef]);
+    
+    // Si en mode synchronisé, mettre à jour la position de défilement dans le contexte
+    if (isSyncMode) {
+      updateScroll(scrollTop, position === 'source' ? 'left' : 'right');
+    }
+  }, [updateCurrentYearMonthFromScroll, effectiveGridRef, isSyncMode, position, updateScroll]);
+  
+  // Enregistrer la grille dans le contexte
+  useEffect(() => {
+    if (isSyncMode) {
+      registerGrid(effectiveGridRef, position === 'source' ? 'left' : 'right');
+    }
+  }, [isSyncMode, position, effectiveGridRef, registerGrid]);
   
   const itemData = useMemo(() => ({
     items: enrichedGalleryItems,

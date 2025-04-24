@@ -8,6 +8,7 @@ import GalleryContent from '@/components/gallery/GalleryContent';
 import DeleteConfirmationDialog from '@/components/gallery/DeleteConfirmationDialog';
 import GalleriesView from './GalleriesView';
 import MobileViewSwitcher from './MobileViewSwitcher';
+import { ScrollSyncProvider } from '@/contexts/ScrollSyncContext';
 
 interface BaseGalleryProps {
   columnsCountLeft: number;
@@ -64,6 +65,9 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const [syncMode, setSyncMode] = useState(false);
+
+  // Calcul du nombre de colonnes synchronisé
+  const syncColumnsCount = Math.min(columnsCountLeft, columnsCountRight);
 
   // Fetch left gallery media (nouveau format)
   const { data: leftMediaByDate = {}, isLoading: isLoadingLeftMediaIds, error: errorLeftMediaIds } = useQuery({
@@ -129,7 +133,7 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
       isLoading={isLoadingLeftMediaIds}
       isError={!!errorLeftMediaIds}
       error={errorLeftMediaIds}
-      columnsCount={columnsCountLeft}
+      columnsCount={syncMode ? syncColumnsCount : columnsCountLeft}
       viewMode={mobileViewMode === 'both' ? 'split' : 'single'}
       onPreviewItem={handlePreviewItemLeft}
       onDeleteSelected={handleDeleteLeft}
@@ -153,7 +157,7 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
       isLoading={isLoadingRightMediaIds}
       isError={!!errorRightMediaIds}
       error={errorRightMediaIds}
-      columnsCount={columnsCountRight}
+      columnsCount={syncMode ? syncColumnsCount : columnsCountRight}
       viewMode={mobileViewMode === 'both' ? 'split' : 'single'}
       onPreviewItem={handlePreviewItemRight}
       onDeleteSelected={handleDeleteRight}
@@ -170,13 +174,15 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full">
-      <GalleriesView
-        viewMode={mobileViewMode}
-        leftContent={leftGalleryContent}
-        rightContent={rightGalleryContent}
-        syncMode={syncMode}
-        onToggleSyncMode={() => setSyncMode(!syncMode)}
-      />
+      <ScrollSyncProvider>
+        <GalleriesView
+          viewMode={mobileViewMode}
+          leftContent={leftGalleryContent}
+          rightContent={rightGalleryContent}
+          syncMode={syncMode}
+          onToggleSyncMode={() => setSyncMode(!syncMode)}
+        />
+      </ScrollSyncProvider>
 
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
