@@ -41,4 +41,12 @@ export type TranslationKey =
   | 'select_all' | 'deselect_all' | 'hide_dates' | 'show_dates' | 'selected' | 'refresh' | 'delete'
   | 'select_date' | 'year' | 'month' | 'january' | 'february' | 'march' | 'april' 
   | 'may' | 'june' | 'july' | 'august' | 'september' | 'october' | 'november' | 'december'
-  | 'cancel' | 'errorLoadingMedia'; // Added missing translation keys
+  | 'cancel' | 'errorLoadingMedia'
+  | 'delete_confirmation_message' | 'directories' | 'files' | 'last_execution'
+  | 'all_media' | 'no_duplicates' | 'unique_to_gallery' | 'in_both_galleries' | 'never_executed'
+  | 'source' | 'destination' | 'files_unit'
+  | 'delete_success_message'
+  | 'month_january' | 'month_february' | 'month_march' | 'month_april'
+  | 'month_may' | 'month_june' | 'month_july' | 'month_august'
+  | 'month_september' | 'month_october' | 'month_november' | 'month_december'
+  | 'media_info' | 'close' | 'loading' | 'error_loading_media' | 'filename' | 'created' | 'preview' | 'download';

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Server, RefreshCw, Folder, Files, Calendar, FileText, X } from 'lucide-react';
 import { 
@@ -20,6 +19,7 @@ import { useIsMobile } from '@/hooks/use-breakpoint';
 import { useTheme } from '@/hooks/use-theme';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useLanguage } from '@/hooks/use-language';
 
 interface ServerStatus {
   isAccessible: boolean;
@@ -46,6 +46,7 @@ const ServerStatusPanel: React.FC<ServerStatusPanelProps> = ({
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const isMobile = useIsMobile();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   
   const getServerStatus = async () => {
     try {
@@ -151,25 +152,25 @@ const ServerStatusPanel: React.FC<ServerStatusPanelProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ServerInfoCard
                 icon={<Folder className="h-4 w-4" />}
-                title="Répertoires"
+                title={t('directories')}
                 items={[
-                  { label: 'Source:', value: status?.sourceDirectory || '—' },
-                  { label: 'Destination:', value: status?.destinationDirectory || '—' }
+                  { label: t('source'), value: status?.sourceDirectory || '—' },
+                  { label: t('destination'), value: status?.destinationDirectory || '—' }
                 ]}
               />
               
               <ServerInfoCard
                 icon={<Files className="h-4 w-4" />}
-                title="Fichiers"
+                title={t('files')}
                 items={[
-                  { label: 'Source:', value: `${status?.sourceFileCount.toLocaleString() || '0'} fichiers` },
-                  { label: 'Destination:', value: `${status?.destinationFileCount.toLocaleString() || '0'} fichiers` }
+                  { label: t('source'), value: `${status?.sourceFileCount.toLocaleString() || '0'} ${t('files_unit')}` },
+                  { label: t('destination'), value: `${status?.destinationFileCount.toLocaleString() || '0'} ${t('files_unit')}` }
                 ]}
               />
               
               <ServerInfoCard
                 icon={<Calendar className="h-4 w-4" />}
-                title="Dernière exécution"
+                title={t('last_execution')}
                 items={[
                   {
                     label: '',
@@ -177,7 +178,7 @@ const ServerStatusPanel: React.FC<ServerStatusPanelProps> = ({
                       ? format(new Date(status.lastExecutionDate), 
                           isMobile ? 'dd/MM/yy HH:mm' : 'dd MMMM yyyy HH:mm:ss', 
                           { locale: fr })
-                      : 'Jamais exécuté'
+                      : t('never_executed')
                   }
                 ]}
               />

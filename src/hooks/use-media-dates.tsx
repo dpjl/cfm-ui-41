@@ -3,6 +3,7 @@ import { usePositionRestoration } from './use-position-restoration';
 import type { FixedSizeGrid } from 'react-window';
 import { MediaIdsByDate, GalleryItem } from '@/types/gallery';
 import { throttle } from 'lodash';
+import { useLanguage } from '@/hooks/use-language';
 
 // On utilise GalleryItem au lieu de EnrichedGalleryItem qui n'existe pas
 type EnrichedGalleryItem = GalleryItem;
@@ -21,13 +22,14 @@ interface MediaDateIndex {
 }
 
 // Fonction utilitaire pour formater le label du mois/année
-const formatMonthYearLabel = (yearMonth: string): string => {
+const formatMonthYearLabel = (yearMonth: string, t: (key: string) => string): string => {
   const [year, month] = yearMonth.split('-').map(Number);
-  const monthNames = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+  const monthKeys = [
+    'month_january', 'month_february', 'month_march', 'month_april',
+    'month_may', 'month_june', 'month_july', 'month_august',
+    'month_september', 'month_october', 'month_november', 'month_december'
   ];
-  return `${monthNames[month - 1]} ${year}`;
+  return `${t(monthKeys[month - 1])} ${year}`;
 };
 
 // Fonction utilitaire pour extraire le group_id
@@ -59,6 +61,8 @@ export function useMediaDates(
   
   // Référence pour indiquer si la modification vient d'une action manuelle (clic sur date)
   const isManualChangeRef = useRef<boolean>(false);
+
+  const { t } = useLanguage();
 
   // Méthode pour sauvegarder la référence externe de la grille
   const setExternalGridRef = useCallback((ref: React.RefObject<any> | null) => {
@@ -227,7 +231,7 @@ export function useMediaDates(
       items.push({ 
         type: 'separator', 
         yearMonth, 
-        label: formatMonthYearLabel(yearMonth), 
+        label: formatMonthYearLabel(yearMonth, t), 
         index: actualIndex, 
         actualIndex 
       });
@@ -264,7 +268,7 @@ export function useMediaDates(
     console.log(`[Performance] Total: ${performanceRef.current.total.toFixed(2)}ms`);
 
     return items;
-  }, [mediaByDate, columnsCount, isSyncMode, unionData]);
+  }, [mediaByDate, columnsCount, isSyncMode, unionData, t]);
 
   // Créer un index optimisé des séparateurs APRÈS avoir créé enrichedGalleryItems
   const sortedSeparatorPositions = useMemo(() => {
@@ -301,10 +305,10 @@ export function useMediaDates(
         const mostRecentMonth = monthsForYear[monthsForYear.length - 1]; 
         const initialYearMonth = `${mostRecentYear}-${mostRecentMonth.toString().padStart(2, '0')}`;
         setCurrentYearMonth(initialYearMonth);
-        setCurrentYearMonthLabel(formatMonthYearLabel(initialYearMonth));
+        setCurrentYearMonthLabel(formatMonthYearLabel(initialYearMonth, t));
       }
     }
-  }, [dateIndex, currentYearMonth]);
+  }, [dateIndex, currentYearMonth, t]);
 
   // Fonction pour faire défiler vers une année-mois spécifique
   const scrollToYearMonth = useCallback((year: number, month: number, gridRef: React.RefObject<any> | null) => {
@@ -315,7 +319,7 @@ export function useMediaDates(
     
     // Mise à jour directe des états pour éviter le décalage
     setCurrentYearMonth(yearMonth);
-    setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth));
+    setCurrentYearMonthLabel(formatMonthYearLabel(yearMonth, t));
     
     // Si aucun gridRef n'est fourni, essayer d'utiliser la référence externe sauvegardée
     if (!gridRef && externalGridRefRef.current) {
@@ -347,7 +351,7 @@ export function useMediaDates(
     }
     
     return false;
-  }, [dateIndex.yearMonthToIndex, separatorIndices]);
+  }, [dateIndex.yearMonthToIndex, separatorIndices, t]);
 
   // Nouvelle fonction optimisée: calculer le mois-année à partir d'une position de défilement
   const getYearMonthFromScrollPosition = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {
@@ -422,7 +426,7 @@ export function useMediaDates(
       // Mettre à jour l'état si nécessaire
       if (newYearMonth && newYearMonth !== currentYearMonth) {
         setCurrentYearMonth(newYearMonth);
-        setCurrentYearMonthLabel(formatMonthYearLabel(newYearMonth));
+        setCurrentYearMonthLabel(formatMonthYearLabel(newYearMonth, t));
         
         // Notifier le parent du changement (sans mise à jour immédiate)
         if (onYearMonthChange) {
@@ -437,7 +441,7 @@ export function useMediaDates(
         oldThrottledUpdate.cancel();
       }
     };
-  }, [getYearMonthFromScrollPosition, currentYearMonth, isRestoring, position, onYearMonthChange]);
+  }, [getYearMonthFromScrollPosition, currentYearMonth, isRestoring, position, onYearMonthChange, t]);
 
   // Fonction pour mettre à jour le mois courant lors d'un défilement
   const updateCurrentYearMonthFromScroll = useCallback((scrollTop: number, gridRef: React.RefObject<any>) => {

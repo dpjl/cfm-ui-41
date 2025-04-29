@@ -8,6 +8,7 @@ import { SelectionMode } from '@/hooks/use-gallery-selection';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLazyMediaInfo } from '@/hooks/use-lazy-media-info';
+import { useLanguage } from '@/hooks/use-language';
 
 interface MediaInfoPanelProps {
   mediaId?: string | null;
@@ -32,6 +33,7 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
   selectionMode,
   position
 }) => {
+  const { t } = useLanguage();
   const isMobile = useIsMobile();
   const displayId = mediaId || (selectedIds.length > 0 ? selectedIds[0] : null);
   
@@ -66,9 +68,9 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
         <div className="flex justify-between items-center mb-1">
           <h3 className="text-sm font-medium flex items-center gap-1">
             {isMultiSelection ? (
-              <>Selected <span className="font-bold">{selectedIds.length}</span> items</>
+              <>{t('selected')} <span className="font-bold">{selectedIds.length}</span> {t('files_unit')}</>
             ) : (
-              <>Media Info</>
+              <>{t('media_info')}</>
             )}
           </h3>
           <Button 
@@ -76,16 +78,16 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
             size="icon" 
             onClick={onClose} 
             className="h-6 w-6"
-            aria-label="Close panel"
+            aria-label={t('close')}
           >
             <X size={14} />
           </Button>
         </div>
         
         <ScrollArea className="max-h-[120px] w-full">
-          {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
+          {loading && <p className="text-sm text-muted-foreground">{t('loading')}</p>}
           
-          {error && <p className="text-sm text-destructive">Failed to load media info</p>}
+          {error && <p className="text-sm text-destructive">{t('error_loading_media')}</p>}
           
           {displayInfo && !isMultiSelection && (
             <div className="space-y-1.5 w-full">
@@ -97,7 +99,7 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
                   </div>
                 ) : (
                   <>
-                    <span className="text-[10px] text-muted-foreground block">Filename</span>
+                    <span className="text-[10px] text-muted-foreground block">{t('filename')}</span>
                     <div className="overflow-x-auto">
                       <span className="text-xs whitespace-nowrap block">{displayInfo.alt}</span>
                     </div>
@@ -119,7 +121,7 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
                     </div>
                   ) : (
                     <>
-                      <span className="text-[10px] text-muted-foreground block">Created</span>
+                      <span className="text-[10px] text-muted-foreground block">{t('created')}</span>
                       <div className="overflow-x-auto">
                         <span className="text-xs whitespace-nowrap">
                           {new Date(displayInfo.createdAt).toLocaleString()} 
@@ -142,7 +144,7 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
                     </div>
                   ) : (
                     <>
-                      <span className="text-[10px] text-muted-foreground block">Hash</span>
+                      <span className="text-[10px] text-muted-foreground block">{t('hash')}</span>
                       <span className="text-xs">
                         {displayInfo.hash}
                       </span>
@@ -160,7 +162,7 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
             size="icon"
             onClick={() => onOpenPreview(displayId)}
             className="h-7 w-7"
-            title="Preview"
+            title={t('preview')}
           >
             <Eye size={16} />
           </Button>
@@ -169,7 +171,7 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
             size="icon"
             onClick={onDeleteSelected}
             className="h-7 w-7"
-            title="Delete"
+            title={t('delete')}
           >
             <Trash size={16} className="text-red-500" />
           </Button>
@@ -178,7 +180,7 @@ const MediaInfoPanel: React.FC<MediaInfoPanelProps> = ({
             size="icon"
             onClick={() => onDownloadSelected(selectedIds)}
             className="h-7 w-7"
-            title="Download"
+            title={t('download')}
           >
             <Download size={16} />
           </Button>

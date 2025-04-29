@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -29,27 +28,27 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({
   const filterOptions: FilterOption[] = [
     { 
       id: 'all', 
-      label: 'All Media',
+      label: t('all_media'),
       icon: <Folder className="h-3 w-3" />
     },
     { 
       id: 'unique', 
-      label: 'No Duplicates',
+      label: t('no_duplicates'),
       icon: <ImageIcon className="h-3 w-3" />
     },
     { 
       id: 'duplicates', 
-      label: 'Duplicates',
+      label: t('duplicates'),
       icon: <Copy className="h-3 w-3" />
     },
     { 
       id: 'exclusive', 
-      label: 'Unique to Gallery',
+      label: t('unique_to_gallery'),
       icon: <Fingerprint className="h-3 w-3" />
     },
     { 
       id: 'common', 
-      label: 'In Both Galleries',
+      label: t('in_both_galleries'),
       icon: <Files className="h-3 w-3" />
     }
   ];

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { TranslationKey } from '@/types/gallery';
 
@@ -41,8 +40,6 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'delete': 'Delete',
     'cancel': 'Cancel',
     'errorLoadingMedia': 'Error loading media',
-    
-    // Nouvelles clés pour le sélecteur de date
     'select_date': 'Select Date',
     'year': 'Year',
     'month': 'Month',
@@ -57,7 +54,40 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'september': 'September',
     'october': 'October',
     'november': 'November',
-    'december': 'December'
+    'december': 'December',
+    'delete_confirmation_message': 'This action will move the selected items to the trash located in the CFM application cache.',
+    'directories': 'Directories',
+    'files': 'Files',
+    'last_execution': 'Last Execution',
+    'all_media': 'All Media',
+    'no_duplicates': 'No Duplicates',
+    'unique_to_gallery': 'Unique to Gallery',
+    'in_both_galleries': 'In Both Galleries',
+    'never_executed': 'Never executed',
+    'source': 'Source:',
+    'destination': 'Destination:',
+    'files_unit': 'files',
+    'delete_success_message': 'The selected media files have been moved to the trash',
+    'month_january': 'January',
+    'month_february': 'February',
+    'month_march': 'March',
+    'month_april': 'April',
+    'month_may': 'May',
+    'month_june': 'June',
+    'month_july': 'July',
+    'month_august': 'August',
+    'month_september': 'September',
+    'month_october': 'October',
+    'month_november': 'November',
+    'month_december': 'December',
+    'media_info': 'Media Info',
+    'close': 'Close',
+    'loading': 'Loading...',
+    'error_loading_media': 'Failed to load media info',
+    'filename': 'Filename',
+    'created': 'Created',
+    'preview': 'Preview',
+    'download': 'Download'
   },
   fr: {
     'date': 'Date',
@@ -90,8 +120,6 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'delete': 'Supprimer',
     'cancel': 'Annuler',
     'errorLoadingMedia': 'Erreur de chargement des médias',
-    
-    // Nouvelles clés pour le sélecteur de date
     'select_date': 'Sélectionner une date',
     'year': 'Année',
     'month': 'Mois',
@@ -106,7 +134,40 @@ const translations: Record<string, Record<TranslationKey, string>> = {
     'september': 'Septembre',
     'october': 'Octobre',
     'november': 'Novembre',
-    'december': 'Décembre'
+    'december': 'Décembre',
+    'delete_confirmation_message': 'Cette action déplacera les éléments sélectionnés dans la corbeille située dans le cache de l\'application CFM.',
+    'directories': 'Répertoires',
+    'files': 'Fichiers',
+    'last_execution': 'Dernière exécution',
+    'all_media': 'Tous les médias',
+    'no_duplicates': 'Sans doublons',
+    'unique_to_gallery': 'Uniques à la galerie',
+    'in_both_galleries': 'Dans les deux galeries',
+    'never_executed': 'Jamais exécuté',
+    'source': 'Source :',
+    'destination': 'Destination :',
+    'files_unit': 'fichiers',
+    'delete_success_message': 'Les fichiers médias sélectionnés ont été déplacés dans la corbeille',
+    'month_january': 'Janvier',
+    'month_february': 'Février',
+    'month_march': 'Mars',
+    'month_april': 'Avril',
+    'month_may': 'Mai',
+    'month_june': 'Juin',
+    'month_july': 'Juillet',
+    'month_august': 'Août',
+    'month_september': 'Septembre',
+    'month_october': 'Octobre',
+    'month_november': 'Novembre',
+    'month_december': 'Décembre',
+    'media_info': 'Informations média',
+    'close': 'Fermer',
+    'loading': 'Chargement...',
+    'error_loading_media': 'Erreur de chargement des informations média',
+    'filename': 'Nom du fichier',
+    'created': 'Créé le',
+    'preview': 'Aperçu',
+    'download': 'Télécharger'
   }
 };
 
