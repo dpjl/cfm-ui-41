@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { useIsMobile } from '@/hooks/use-breakpoint';
@@ -11,7 +10,7 @@ import FolderTreeSection from '@/components/sidebar/FolderTreeSection';
 import ColumnSliders from '@/components/sidebar/ColumnSliders';
 
 // Define our filter types
-export type MediaFilter = 'all' | 'unique' | 'duplicates' | 'exclusive' | 'common';
+export type MediaFilter = string; // Now more flexible to accept any filter ID from the backend
 
 interface AppSidebarProps {
   selectedDirectoryId: string;

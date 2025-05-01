@@ -282,3 +282,39 @@ export async function deleteImages(imageIds: string[], directory: 'source' | 'de
     return { success: true, message: `Successfully deleted ${imageIds.length} image(s)` };
   }
 }
+
+export interface DynamicFilter {
+  id: string;
+  label: string;
+  icon?: string;
+  description?: string;
+}
+
+export async function fetchFilters(): Promise<DynamicFilter[]> {
+  const url = `${API_BASE_URL}/filters`;
+  console.log("Fetching filters from:", url);
+  
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Server responded with error:", response.status, errorText);
+      throw new Error(`Failed to fetch filters: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log("Received filters:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching filters:", error);
+    
+    // Return default filters in case of error
+    return [
+      { id: 'all', label: 'All Media', icon: 'Folder' },
+      { id: 'unique', label: 'No Duplicates', icon: 'ImageIcon' },
+      { id: 'duplicates', label: 'Duplicates', icon: 'Copy' },
+      { id: 'exclusive', label: 'Unique to Gallery', icon: 'Fingerprint' },
+      { id: 'common', label: 'In Both Galleries', icon: 'Files' }
+    ];
+  }
+}

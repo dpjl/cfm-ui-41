@@ -203,7 +203,8 @@ export function useMediaDates(
         const [year, month] = date.split('-');
         if (!year || !month) continue;
         const yearMonth = `${year}-${month}`;
-        monthToUnionIds.set(yearMonth, sortedIds);
+        if (!monthToUnionIds.has(yearMonth)) monthToUnionIds.set(yearMonth, []);
+        monthToUnionIds.get(yearMonth)!.push(...sortedIds);
       }
     }
 

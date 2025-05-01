@@ -5,12 +5,8 @@ import { Folder, ImageIcon, Files, Copy, Fingerprint } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-breakpoint';
 import { useLanguage } from '@/hooks/use-language';
 import { MediaFilter } from '@/components/AppSidebar';
-
-interface FilterOption {
-  id: MediaFilter;
-  label: string;
-  icon: React.ReactNode;
-}
+import { useDynamicFilters } from '@/hooks/use-dynamic-filters';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface FilterOptionsProps {
   selectedFilter: MediaFilter;
@@ -23,54 +19,51 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({
 }) => {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
+  const { filters, isLoading } = useDynamicFilters();
 
-  // Filter options with simpler labels
-  const filterOptions: FilterOption[] = [
-    { 
-      id: 'all', 
-      label: t('all_media'),
-      icon: <Folder className="h-3 w-3" />
-    },
-    { 
-      id: 'unique', 
-      label: t('no_duplicates'),
-      icon: <ImageIcon className="h-3 w-3" />
-    },
-    { 
-      id: 'duplicates', 
-      label: t('duplicates'),
-      icon: <Copy className="h-3 w-3" />
-    },
-    { 
-      id: 'exclusive', 
-      label: t('unique_to_gallery'),
-      icon: <Fingerprint className="h-3 w-3" />
-    },
-    { 
-      id: 'common', 
-      label: t('in_both_galleries'),
-      icon: <Files className="h-3 w-3" />
-    }
-  ];
+  // Map des icônes par nom
+  const iconMap: Record<string, React.ReactNode> = {
+    'Folder': <Folder className="h-3 w-3" />,
+    'ImageIcon': <ImageIcon className="h-3 w-3" />,
+    'Copy': <Copy className="h-3 w-3" />,
+    'Fingerprint': <Fingerprint className="h-3 w-3" />,
+    'Files': <Files className="h-3 w-3" />
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-wrap gap-1.5 mb-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="h-6 w-20" />
+        ))}
+      </div>
+    );
+  }
+
+  // Traduire les labels des filtres
+  const translatedFilters = filters?.map(filter => ({
+    ...filter,
+    label: t(filter.label.toLowerCase().replace(/\s+/g, '_'))
+  }));
 
   return (
     <div className="flex flex-wrap gap-1.5 mb-1">
-      {filterOptions.map((option) => (
+      {translatedFilters?.map((filter) => (
         <Badge
-          key={option.id}
-          variant={selectedFilter === option.id ? "default" : "outline"}
+          key={filter.id}
+          variant={selectedFilter === filter.id ? "default" : "outline"}
           className={cn(
             "cursor-pointer transition-colors py-1 px-2", 
-            selectedFilter === option.id 
+            selectedFilter === filter.id 
               ? "bg-primary hover:bg-primary/90" 
               : "hover:bg-primary/10 hover:text-primary-foreground"
           )}
-          onClick={() => onFilterChange(option.id)}
+          onClick={() => onFilterChange(filter.id as MediaFilter)}
         >
           <span className="flex items-center gap-1">
-            {option.icon}
+            {filter.icon && iconMap[filter.icon]}
             <span className={isMobile ? "text-[10px]" : "text-xs"}>
-              {option.label}
+              {filter.label}
             </span>
           </span>
         </Badge>
