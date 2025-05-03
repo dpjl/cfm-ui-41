@@ -74,24 +74,15 @@ const GalleryGridCell = memo(({ columnIndex, rowIndex, style, data }: GalleryGri
     return (
       <div 
         style={missingStyle} 
-        className="missing-cell relative bg-gray-100 flex items-center justify-center"
+        className="missing-cell relative bg-transparent flex items-center justify-center"
         role="cell"
         aria-label={`Missing item: ${item.id}`}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={2}
-          stroke="currentColor"
-          className="w-6 h-6 text-red-500"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
+        <img
+          src="/not_copied_duplicate_64x64.png"
+          alt="Missing item"
+          className="w-10 h-10 object-contain opacity-80"
+        />
       </div>
     );
   }

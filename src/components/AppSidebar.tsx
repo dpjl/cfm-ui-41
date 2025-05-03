@@ -24,7 +24,6 @@ interface AppSidebarProps {
     [key: string]: number;
   };
   currentViewMode?: string;
-  onOpenDbViewer?: (directoryId: string, position: 'source' | 'destination') => void;
   pathRegex?: string;
   onPathRegexChange?: (value: string) => void;
   onValidatePathRegex?: () => void;
@@ -40,7 +39,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   onColumnsChange,
   columnValues,
   currentViewMode,
-  onOpenDbViewer,
   pathRegex = '',
   onPathRegexChange = () => {},
   onValidatePathRegex = () => {},
@@ -50,15 +48,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   // Pour forcer un re-rendu quand les valeurs changent 
   const sliderKey = React.useMemo(() => 
     Object.values(columnValues).join('-'), [columnValues]);
-
-  const handleOpenDbViewer = () => {
-    if (onOpenDbViewer && selectedDirectoryId) {
-      onOpenDbViewer(
-        selectedDirectoryId, 
-        position === 'left' ? 'source' : 'destination'
-      );
-    }
-  };
 
   return (
     <div className="flex flex-col h-full bg-card/90 backdrop-blur-sm w-full overflow-hidden">
@@ -109,20 +98,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             onColumnsChange={onColumnsChange}
           />
         </div>
-        
-        {/* Database Viewer Button */}
-        {onOpenDbViewer && selectedDirectoryId && (
-          <div className="mt-3">
-            <Button 
-              variant="outline" 
-              className="w-full flex items-center justify-center gap-2"
-              onClick={handleOpenDbViewer}
-            >
-              <Database className="h-4 w-4" />
-              <span>Voir les données</span>
-            </Button>
-          </div>
-        )}
       </div>
       
       {/* Folder tree section */}

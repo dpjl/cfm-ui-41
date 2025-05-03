@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import SidePanel from '@/components/layout/SidePanel';
 import GalleriesContainer from '@/components/layout/GalleriesContainer';
 import AppSidebar from '@/components/AppSidebar';
-import DbViewer from '@/components/db-viewer/DbViewer';
-import { useDbViewer } from '@/hooks/use-db-viewer';
 import { useGalleryContext } from '@/contexts/GalleryContext';
 import { useViewportHeight } from '@/hooks/use-viewport-height';
 
@@ -58,9 +56,6 @@ const GalleryLayout: React.FC = () => {
     getViewModeType
   } = useGalleryContext();
   
-  // Initialiser le hook dbViewer
-  const dbViewerState = useDbViewer();
-  
   // Récupérer le nombre de colonnes
   const columnsCountLeft = getCurrentColumnsLeft();
   const columnsCountRight = getCurrentColumnsRight();
@@ -83,11 +78,6 @@ const GalleryLayout: React.FC = () => {
     };
   }
   
-  // Handler pour ouvrir le visualiseur de base de données
-  const handleOpenDbViewer = (directoryId: string, position: 'source' | 'destination') => {
-    dbViewerState.openViewer(directoryId, position);
-  };
-
   const [pathRegexInputLeft, setPathRegexInputLeft] = useState('');
   const [pathRegexLeft, setPathRegexLeft] = useState('');
   const [pathRegexInputRight, setPathRegexInputRight] = useState('');
@@ -115,7 +105,6 @@ const GalleryLayout: React.FC = () => {
           onColumnsChange={(count) => updateColumnCount('left', count)}
           columnValues={leftColumnValues}
           currentViewMode={currentViewMode}
-          onOpenDbViewer={handleOpenDbViewer}
           pathRegex={pathRegexInputLeft}
           onPathRegexChange={setPathRegexInputLeft}
           onValidatePathRegex={handleValidatePathRegexLeft}
@@ -167,15 +156,11 @@ const GalleryLayout: React.FC = () => {
           onColumnsChange={(count) => updateColumnCount('right', count)}
           columnValues={rightColumnValues}
           currentViewMode={currentViewMode}
-          onOpenDbViewer={handleOpenDbViewer}
           pathRegex={pathRegexInputRight}
           onPathRegexChange={setPathRegexInputRight}
           onValidatePathRegex={handleValidatePathRegexRight}
         />
       </SidePanel>
-      
-      {/* Intégrer le composant DbViewer */}
-      <DbViewer dbViewerState={dbViewerState} />
     </div>
   );
 };
