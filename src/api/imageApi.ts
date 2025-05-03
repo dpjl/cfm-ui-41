@@ -129,8 +129,9 @@ export async function fetchDirectoryTree(position?: 'left' | 'right'): Promise<D
   }
 }
 
-export async function fetchMediaIds(directory: string, position: 'source' | 'destination', filter: string = 'all'): Promise<MediaIdsByDate> {
-  const url = `${API_BASE_URL}/list?directory=${encodeURIComponent(position)}&folder=${encodeURIComponent(directory)}${filter !== 'all' ? `&filter=${filter}` : ''}`;
+export async function fetchMediaIds(directory: string, position: 'source' | 'destination', filter: string = 'all', pathRegex?: string): Promise<MediaIdsByDate> {
+  let url = `${API_BASE_URL}/list?directory=${encodeURIComponent(position)}&folder=${encodeURIComponent(directory)}${filter !== 'all' ? `&filter=${filter}` : ''}`;
+  if (pathRegex) url += `&pathRegex=${encodeURIComponent(pathRegex)}`;
   console.log("Fetching media IDs from:", url);
   try {
     const response = await fetch(url);

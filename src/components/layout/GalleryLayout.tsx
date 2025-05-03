@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import SidePanel from '@/components/layout/SidePanel';
 import GalleriesContainer from '@/components/layout/GalleriesContainer';
 import AppSidebar from '@/components/AppSidebar';
@@ -87,7 +87,15 @@ const GalleryLayout: React.FC = () => {
   const handleOpenDbViewer = (directoryId: string, position: 'source' | 'destination') => {
     dbViewerState.openViewer(directoryId, position);
   };
-  
+
+  const [pathRegexInputLeft, setPathRegexInputLeft] = useState('');
+  const [pathRegexLeft, setPathRegexLeft] = useState('');
+  const [pathRegexInputRight, setPathRegexInputRight] = useState('');
+  const [pathRegexRight, setPathRegexRight] = useState('');
+
+  const handleValidatePathRegexLeft = () => setPathRegexLeft(pathRegexInputLeft);
+  const handleValidatePathRegexRight = () => setPathRegexRight(pathRegexInputRight);
+
   return (
     <div className="flex overflow-hidden mt-2 relative" style={{height: 'calc(var(--real-vh, 1vh) * 100)'}}> 
       <SidePanel 
@@ -108,6 +116,9 @@ const GalleryLayout: React.FC = () => {
           columnValues={leftColumnValues}
           currentViewMode={currentViewMode}
           onOpenDbViewer={handleOpenDbViewer}
+          pathRegex={pathRegexInputLeft}
+          onPathRegexChange={setPathRegexInputLeft}
+          onValidatePathRegex={handleValidatePathRegexLeft}
         />
       </SidePanel>
 
@@ -134,6 +145,8 @@ const GalleryLayout: React.FC = () => {
           onToggleLeftPanel={toggleLeftPanel}
           onToggleRightPanel={toggleRightPanel}
           onColumnsChange={(side, count) => updateColumnCount(side, count)}
+          pathRegexLeft={pathRegexLeft}
+          pathRegexRight={pathRegexRight}
         />
       </div>
 
@@ -155,6 +168,9 @@ const GalleryLayout: React.FC = () => {
           columnValues={rightColumnValues}
           currentViewMode={currentViewMode}
           onOpenDbViewer={handleOpenDbViewer}
+          pathRegex={pathRegexInputRight}
+          onPathRegexChange={setPathRegexInputRight}
+          onValidatePathRegex={handleValidatePathRegexRight}
         />
       </SidePanel>
       

@@ -25,6 +25,9 @@ interface AppSidebarProps {
   };
   currentViewMode?: string;
   onOpenDbViewer?: (directoryId: string, position: 'source' | 'destination') => void;
+  pathRegex?: string;
+  onPathRegexChange?: (value: string) => void;
+  onValidatePathRegex?: () => void;
 }
 
 const AppSidebar: React.FC<AppSidebarProps> = ({ 
@@ -37,7 +40,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   onColumnsChange,
   columnValues,
   currentViewMode,
-  onOpenDbViewer
+  onOpenDbViewer,
+  pathRegex = '',
+  onPathRegexChange = () => {},
+  onValidatePathRegex = () => {},
 }) => {
   const { t } = useLanguage();
 
@@ -63,6 +69,34 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           selectedFilter={selectedFilter}
           onFilterChange={onFilterChange}
         />
+
+        {/* Path Regex Filter */}
+        <div className="mt-3">
+          <label htmlFor="path-regex" className="block text-xs font-medium text-muted-foreground mb-1">
+            Path Regex
+          </label>
+          <div className="flex gap-2 items-center">
+            <input
+              id="path-regex"
+              type="text"
+              className="w-full px-2 py-1 border border-muted rounded bg-background text-xs focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition placeholder:text-muted-foreground"
+              placeholder="e.g. 2024-06.* or IMG.*jpg"
+              value={pathRegex}
+              onChange={e => onPathRegexChange(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') onValidatePathRegex(); }}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <button
+              type="button"
+              className="px-2 py-1 text-xs rounded font-medium bg-primary text-primary-foreground shadow-sm hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors duration-150"
+              onClick={onValidatePathRegex}
+              title="Valider le filtre regex"
+            >
+              Valider
+            </button>
+          </div>
+        </div>
         
         {/* Column count sliders */}
         <div className="mt-3">

@@ -27,6 +27,8 @@ interface BaseGalleryProps {
   handleDelete: () => void;
   leftFilter?: MediaFilter;
   rightFilter?: MediaFilter;
+  pathRegexLeft?: string;
+  pathRegexRight?: string;
 }
 
 interface SidebarToggleProps {
@@ -59,6 +61,8 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
   setMobileViewMode,
   leftFilter,
   rightFilter,
+  pathRegexLeft = '',
+  pathRegexRight = '',
   onToggleLeftPanel,
   onToggleRightPanel,
   onColumnsChange
@@ -73,14 +77,14 @@ const GalleriesContainer: React.FC<GalleriesContainerProps> = ({
 
   // Fetch left gallery media (nouveau format)
   const { data: leftMediaByDate = {}, isLoading: isLoadingLeftMediaIds, error: errorLeftMediaIds } = useQuery({
-    queryKey: ['leftMediaByDate', selectedDirectoryIdLeft, leftFilter],
-    queryFn: () => fetchMediaIds(selectedDirectoryIdLeft, 'source', leftFilter as string)
+    queryKey: ['leftMediaByDate', selectedDirectoryIdLeft, leftFilter, pathRegexLeft],
+    queryFn: () => fetchMediaIds(selectedDirectoryIdLeft, 'source', leftFilter as string, pathRegexLeft)
   });
 
   // Fetch right gallery media (nouveau format)
   const { data: rightMediaByDate = {}, isLoading: isLoadingRightMediaIds, error: errorRightMediaIds } = useQuery({
-    queryKey: ['rightMediaByDate', selectedDirectoryIdRight, rightFilter],
-    queryFn: () => fetchMediaIds(selectedDirectoryIdRight, 'destination', rightFilter as string)
+    queryKey: ['rightMediaByDate', selectedDirectoryIdRight, rightFilter, pathRegexRight],
+    queryFn: () => fetchMediaIds(selectedDirectoryIdRight, 'destination', rightFilter as string, pathRegexRight)
   });
 
   // Handler functions
