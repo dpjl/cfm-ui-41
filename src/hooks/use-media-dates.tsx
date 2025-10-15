@@ -147,7 +147,7 @@ export function useMediaDates(
           
           // Trier les IDs en utilisant les group_id pré-calculés
           const sortedIds = Array.from(dateIds).sort((a, b) => 
-            (idToGroupId.get(a) || 0) - (idToGroupId.get(b) || 0)
+            (idToGroupId.get(b) || 0) - (idToGroupId.get(a) || 0)
           );
           
           dateToSortedIds.set(date, sortedIds);
